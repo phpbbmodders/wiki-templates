@@ -53,7 +53,16 @@ Example: {{Main|Installation|Upgrading}}
 python3 tools/compare_template.py --board ~/boards/wiki Main Nowrap
 ```
 
-Each example prints `MATCH`, or `DIFFER` with both texts and the words that differ. Templates copied from Fandom are rendered on the board only (`BOARD ONLY`), since Fandom's terms forbid automated access. `--board` defaults to `$WIKI_TEMPLATES_BOARD`, and `--bootstrap` to `$SEED_FORUM_BOOTSTRAP`, or to a seed-forum checkout next to this repository.
+Each example prints `MATCH`, or `DIFFER` with both texts and the words that differ.
+
+When an adaptation deliberately differs from the original, for example leaving out links that only make sense on Wikipedia, add an `Expect:` line right under the example. It holds wiki text the example should render the same as, and it's rendered on the board too, so magic words such as `{{SITENAME}}` work:
+
+```text
+Example: {{Stub}}
+Expect: This article is a stub. You can help {{SITENAME}} by adding missing information.
+```
+
+That example is compared with its `Expect:` text instead of the original, and prints `EXPECTED` when they match. The original's text is still printed, so a reviewer can see what was left out. Templates copied from Fandom are rendered on the board only (`BOARD ONLY`), since Fandom's terms forbid automated access. `--board` defaults to `$WIKI_TEMPLATES_BOARD`, and `--bootstrap` to `$SEED_FORUM_BOOTSTRAP`, or to a seed-forum checkout next to this repository.
 
 Two things it catches often:
 

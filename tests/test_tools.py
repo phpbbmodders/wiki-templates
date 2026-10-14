@@ -289,6 +289,22 @@ class CompareTests(unittest.TestCase):
         self.assertEqual(lines, ["MATCH    Main: {{Main|A}}",
                                  "DIFFER   Main: {{Main|A|B}}"])
 
+    def test_an_expect_line_records_a_deliberate_difference(self):
+        header = ("<noinclude>\nSource: https://en.wikipedia.org/wiki/"
+                  "Template:Stub\nExample: {{Stub}}\nExpect: A stub. Help "
+                  "{{SITENAME}}.\nExample: {{Stub|x}}\nExpect: Other text."
+                  "\n</noinclude>")
+        status, lines = self.run_compare(
+            {"Stub": header + "x"},
+            {"{{Stub}}": "A stub. Help Example board.",
+             "A stub. Help {{SITENAME}}.": "A stub. Help Example board.",
+             "{{Stub|x}}": "A stub.", "Other text.": "Other text."},
+            {"{{Stub}}": "A stub. Help Wikipedia. v t e",
+             "{{Stub|x}}": "A stub. v t e"})
+        self.assertEqual(status, 1)
+        self.assertEqual(lines, ["EXPECTED Stub: {{Stub}}",
+                                 "DIFFER   Stub: {{Stub|x}}"])
+
     def test_no_examples_fails_and_fandom_renders_on_the_board_only(self):
         fandom = ("<noinclude>\nSource: https://templates.fandom.com/wiki/"
                   "Template:Nowrap\nExample: {{Nowrap|a b}}\n</noinclude>")
