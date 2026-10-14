@@ -3,8 +3,8 @@ Source: https://en.wikipedia.org/wiki/Template:Further
 History: https://en.wikipedia.org/w/index.php?title=Template:Further&action=history
 Revision: https://en.wikipedia.org/w/index.php?title=Template:Further&oldid=1337132284 (02/07/2026 5:55 PM UTC)
 Adapted by phpBB Modders.
-Changes: rewritten in plain wiki text without Lua (Module:Labelled list hatnote): up to five articles, with their l1 to l5 link texts, listed as A, A and B, or A, B, and C; no topic or selfref options; shown in italics instead of the hatnote style, since the wiki allows no <div>; &nbsp; before "and", since {{#if:}} trims a plain space there; removed the source's documentation and categories.
+Changes: rewritten in plain wiki text without Lua (Module:Labelled list hatnote): up to five articles, with their l1 to l5 link texts, listed as A, A and B, or A, B, and C; no topic or selfref options; shown in italics instead of the hatnote style, since the wiki allows no <div>; &#32; before "and", since {{#if:}} trims a plain space there; removed the source's documentation and categories.
 Example: {{Further|Styles}}
 Example: {{Further|Styles|Templates}}
 Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
-</noinclude>[i]Further information: [[{{{1}}}|{{{l1|{{{1}}}}}}]]{{#if:{{{2|}}}|{{#if:{{{3|}}}|,|&nbsp;and}} [[{{{2}}}|{{{l2|{{{2}}}}}}]]}}{{#if:{{{3|}}}|,{{#if:{{{4|}}}||&nbsp;and}} [[{{{3}}}|{{{l3|{{{3}}}}}}]]}}{{#if:{{{4|}}}|,{{#if:{{{5|}}}||&nbsp;and}} [[{{{4}}}|{{{l4|{{{4}}}}}}]]}}{{#if:{{{5|}}}|,&nbsp;and [[{{{5}}}|{{{l5|{{{5}}}}}}]]}}[/i]
+</noinclude>[i]Further information: [[{{{1}}}|{{{l1|{{{1}}}}}}]]{{#if:{{{2|}}}|{{#if:{{{3|}}}|,|&#32;and}} [[{{{2}}}|{{{l2|{{{2}}}}}}]]}}{{#if:{{{3|}}}|,{{#if:{{{4|}}}||&#32;and}} [[{{{3}}}|{{{l3|{{{3}}}}}}]]}}{{#if:{{{4|}}}|,{{#if:{{{5|}}}||&#32;and}} [[{{{4}}}|{{{l4|{{{4}}}}}}]]}}{{#if:{{{5|}}}|,&#32;and [[{{{5}}}|{{{l5|{{{5}}}}}}]]}}[/i]

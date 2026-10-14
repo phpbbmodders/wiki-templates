@@ -1,0 +1,10 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Under_construction
+History: https://en.wikipedia.org/w/index.php?title=Template:Under_construction&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Under_construction&oldid=1379314703 (10/09/2026 4:59 AM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten as a call to the Ambox here instead of Mbox; left out the sentence with the time of the last edit (REVISIONTIMESTAMP, which the wiki does not have) and the suggestion to use {{In use}}, which is not in this repository; no user, image or category options; removed the source's documentation and categories.
+Example: {{Under construction}}
+Expect: This article or section is undergoing significant expansion or restructuring. You are welcome to assist in its construction by editing it as well. Please remove this notice if this article or section has not been edited in several days.
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>{{Ambox|text=This article or section is undergoing significant expansion or restructuring. You are welcome to assist in its construction by editing it as well. Please remove this notice if this article or section has not been edited in several days.}}

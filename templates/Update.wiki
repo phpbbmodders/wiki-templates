@@ -1,0 +1,13 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Update
+History: https://en.wikipedia.org/w/index.php?title=Template:Update&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Update&oldid=1334395511 (01/23/2026 7:52 AM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten in plain wiki text for the Ambox here: the article, section and part forms, with the date; no inaccurate, reason, talk or category options; bold with BBCode, since the wiki has no '''bold'''; links to Wikipedia's help pages left out; removed the source's documentation and categories.
+Example: {{Update}}
+Example: {{Update|date=October 2026}}
+Example: {{Update|section}}
+Example: {{Update|part=the 2.0 release}}
+Example: {{Update|section|date=October 2026}}
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>{{Ambox|issue={{#if:{{{part|{{{1|}}}}}}|{{#ifeq:{{{part|{{{1|}}}}}}|section|This section needs to be [b]updated[/b].|Parts of this article (those related to {{{part|{{{1|}}}}}}) need to be [b]updated[/b].}}|This article needs to be [b]updated[/b].}}|fix=Please help update this article to reflect recent events or newly available information.|date={{{date|}}}}}
