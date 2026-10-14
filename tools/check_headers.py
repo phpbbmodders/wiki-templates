@@ -7,8 +7,12 @@ Each templates/*.wiki file must start with a <noinclude> block holding:
 * "Source:" followed by the https://en.wikipedia.org/wiki/Template:... page
   the template was adapted from;
 * "History:" followed by that page's history URL;
-* "Changes:" saying what was removed or changed;
-* the licence notice, a link to https://creativecommons.org/licenses/by-sa/4.0/.
+* "Changes:" saying what was removed or changed (not "TODO");
+* the licence notice, a link to
+  https://creativecommons.org/licenses/by-sa/4.0/;
+
+and no "Needs adapting:" line, which tools/fetch_template.py writes while a
+template still uses what the wiki cannot run.
 
 Input: the templates directory (default: templates/ next to this script's
 parent). Output: one line per problem on stderr. Exit status: 0 when every
@@ -40,8 +44,13 @@ def problems(path: Path) -> list:
     header = HEADER.match(text)
     if not header:
         return ["does not start with a <noinclude> header"]
-    return [f"header has no {name}" for name, pattern in REQUIRED.items()
-            if not pattern.search(header.group(1))]
+    found = [f"header has no {name}" for name, pattern in REQUIRED.items()
+             if not pattern.search(header.group(1))]
+    if re.search(r"^Changes: TODO\b", header.group(1), re.M):
+        found.append("the list of changes still says TODO")
+    if re.search(r"^Needs adapting:", header.group(1), re.M):
+        found.append("still needs adapting (see its Needs adapting line)")
+    return found
 
 
 def main() -> int:
