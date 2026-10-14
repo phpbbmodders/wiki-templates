@@ -58,7 +58,7 @@ Each example prints `MATCH`, or `DIFFER` with both texts and the words that diff
 Two things it catches often:
 
 - **Inline HTML.** The wiki only allows HTML tables in articles and templates, so a `<span>`, `<div>` or `<b>` from the original is shown as text.
-- **Spaces lost at the edges of `{{#if:}}` and similar.** Their results are trimmed. On Wikipedia `&#32;` keeps such a space, but the wiki currently loses it too, so write `&nbsp;` for now.
+- **Spaces lost at the edges of `{{#if:}}` and similar.** Their results are trimmed, on the wiki as on Wikipedia, so a plain space there is dropped. Write `&#32;` to keep it, as Wikipedia's templates do.
 
 ### Templates from a Fandom wiki, by hand
 

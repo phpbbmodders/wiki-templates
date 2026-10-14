@@ -55,10 +55,17 @@ $user->style = array('style_id' => (int) $config['default_style']);
 /**
  * Parse text as a wiki article's text is parsed, with the wiki's markup on.
  *
+ * The text is first escaped as phpBB's request object escapes what is typed
+ * in the edit form (request::variable() hands it to the same helper). phpBB's message parser decodes every entity before it
+ * parses, so without this an entity such as &#32; would be decoded once more
+ * than on the board, and act as a plain space.
+ *
  * @return array The stored text, its uid, bitfield and flags
  */
 function wiki_store($text)
 {
+	$typed = $text;
+	(new \phpbb\request\type_cast_helper())->set_var($text, $typed, 'string', true);
 	$uid = $bitfield = '';
 	$flags = 0;
 	\phpbbmodders\wiki\wiki\markup::set_active(true);
