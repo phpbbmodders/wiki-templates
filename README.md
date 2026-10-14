@@ -2,7 +2,7 @@
 
 Ready-made templates for the [phpBB Modders wiki extension](https://github.com/phpbbmodders/phpbb-ext-wiki), adapted from Wikipedia's and other Wikimedia wikis' for what the wiki can do, so a board can start with a useful set instead of writing every template from nothing.
 
-So far [`templates/`](templates/) holds the hatnotes `{{Main}}`, `{{See also}}`, `{{Further}}`, `{{About}}`, `{{Distinguish}}`, `{{For}}`, `{{Other uses}}` and `{{Redirect}}`; the message boxes `{{Ambox}}`, `{{Update}}`, `{{Unreferenced}}`, `{{More citations needed}}`, `{{Primary sources}}`, `{{Cleanup}}`, `{{Confusing}}`, `{{Technical}}`, `{{Expand section}}` and `{{Under construction}}`; the stub boxes `{{Asbox}}` and `{{Stub}}`; the inline helpers `{{Nowrap}}`, `{{Small}}` and `{{Large}}`; and `{{Blockquote}}` (phpBB's quote box) and `{{Template link}}`, which shows a template's name in braces as a link. The plan for this repository is in the wiki extension's [`docs/TODO/todo-wiki-templates-repo.md`](https://github.com/phpbbmodders/phpbb-ext-wiki/blob/main/docs/TODO/todo-wiki-templates-repo.md).
+So far [`templates/`](templates/) holds the hatnotes `{{Main}}`, `{{See also}}`, `{{Further}}`, `{{About}}`, `{{Distinguish}}`, `{{For}}`, `{{Other uses}}` and `{{Redirect}}`; the message boxes `{{Ambox}}`, `{{Update}}`, `{{Unreferenced}}`, `{{More citations needed}}`, `{{Primary sources}}`, `{{Cleanup}}`, `{{Confusing}}`, `{{Technical}}`, `{{Expand section}}` and `{{Under construction}}`; the stub boxes `{{Asbox}}` and `{{Stub}}`; the inline helpers `{{Nowrap}}`, `{{Small}}`, `{{Large}}` and `{{Center}}`; and `{{Blockquote}}` (phpBB's quote box) and `{{Template link}}`, which shows a template's name in braces as a link. The plan for this repository is in the wiki extension's [`docs/TODO/todo-wiki-templates-repo.md`](https://github.com/phpbbmodders/phpbb-ext-wiki/blob/main/docs/TODO/todo-wiki-templates-repo.md).
 
 ## Why a separate repository
 
@@ -14,7 +14,7 @@ Only templates that work as plain wiki text with parameters:
 
 - hatnotes (`{{Main}}`, `{{See also}}`, `{{Further}}`, `{{About}}`);
 - message boxes ("needs references", "out of date", "under construction", stub);
-- small inline helpers (`{{Nowrap}}`, `{{Small}}`, `{{Large}}`; `{{Center}}` needs a `<div>`, so it's recorded as not adaptable);
+- small inline helpers (`{{Nowrap}}`, `{{Small}}`, `{{Large}}`, `{{Center}}`, which needs the wiki extension 1.1.0-a2 or later for `<center>`);
 - simplified infobox, citation and navbox templates that take the same parameter names as Wikipedia's.
 
 Left out: Lua modules (`{{#invoke:}}`) and the templates that need them, TemplateStyles (CSS inside a template), and anything whose source page says it is not plain CC BY-SA.
