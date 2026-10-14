@@ -8,6 +8,7 @@ Run: python3 -m unittest discover -s tests
 """
 
 import importlib.util
+import json
 import sys
 import tempfile
 import unittest
@@ -118,35 +119,117 @@ class HeaderTests(unittest.TestCase):
 
 
 class CommandTests(unittest.TestCase):
-    """The command line, with the API replaced by a stub."""
+    """The command line, with the API replaced by stubs."""
+
+    INFO = {"pageid": 1721254, "title": "Template:See also",
+            "revid": 1292725734, "timestamp": ""}
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.dir = Path(self.tmp.name)
+        self.record = self.dir / "data" / "templates.json"
+        self.fetched = []
+
+        def fake_fetch(names, content=True):
+            if content:
+                self.fetched.extend(names)
+            return {name: (dict(self.INFO, text="<span>{{{1}}}</span>",
+                                timestamp="2025-05-30T12:00:00Z")
+                           if name == "See also" else None)
+                    for name in names}
+        patcher = mock.patch.object(fetch_template, "fetch", fake_fetch)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        printer = mock.patch("builtins.print")
+        self.printed = printer.start()
+        self.addCleanup(printer.stop)
 
     def run_main(self, *args):
-        with mock.patch.object(sys, "argv", ["fetch_template.py", *args]):
+        argv = ["fetch_template.py", "-d", str(self.dir),
+                "-R", str(self.record), *args]
+        with mock.patch.object(sys, "argv", argv):
             return fetch_template.main()
 
+    def saved(self):
+        return json.loads(self.record.read_text(encoding="utf-8"))
+
+    def test_fetch_records_the_page_id_and_skips_a_known_revision(self):
+        self.assertEqual(self.run_main("See also"), 0)
+        self.assertEqual(self.saved(), {"1721254": {
+            "name": "See also", "reason": "", "revid": 1292725734,
+            "status": "fetched", "title": "Template:See also"}})
+        (self.dir / "See also.wiki").unlink()
+        self.assertEqual(self.run_main("See also"), 0)
+        self.assertEqual(self.fetched, ["See also"])
+        self.assertFalse((self.dir / "See also.wiki").exists())
+
     def test_existing_file_is_not_replaced_without_force(self):
-        page = dict(PAGE, text="<span>{{{1}}}</span>")
-        with tempfile.TemporaryDirectory() as directory, \
-                mock.patch.object(fetch_template, "fetch",
-                                  return_value={"See also": page}), \
-                mock.patch("builtins.print"):
-            target = Path(directory) / "See also.wiki"
-            self.assertEqual(self.run_main("-d", directory, "See also"), 0)
-            target.write_text("edited", encoding="utf-8")
-            self.assertEqual(self.run_main("-d", directory, "See also"), 1)
-            self.assertEqual(target.read_text(encoding="utf-8"), "edited")
-            self.assertEqual(
-                self.run_main("-d", directory, "--force", "See also"), 0)
-            self.assertIn("<span>{{{1}}}</span>",
-                          target.read_text(encoding="utf-8"))
+        target = self.dir / "See also.wiki"
+        target.write_text("edited", encoding="utf-8")
+        self.assertEqual(self.run_main("See also"), 1)
+        self.assertEqual(target.read_text(encoding="utf-8"), "edited")
+        self.assertEqual(self.run_main("--force", "See also"), 0)
+        self.assertIn("<span>{{{1}}}</span>",
+                      target.read_text(encoding="utf-8"))
 
     def test_missing_template_fails_and_dry_run_writes_nothing(self):
-        with tempfile.TemporaryDirectory() as directory, \
-                mock.patch.object(fetch_template, "fetch",
-                                  return_value={"Nope": None}), \
-                mock.patch("builtins.print"):
-            self.assertEqual(self.run_main("-d", directory, "-n", "Nope"), 1)
-            self.assertEqual(list(Path(directory).iterdir()), [])
+        self.assertEqual(self.run_main("-n", "Nope", "See also"), 1)
+        self.assertFalse(self.record.exists())
+        self.assertFalse((self.dir / "See also.wiki").exists())
+
+    def test_mark_unadaptable_records_without_downloading(self):
+        self.assertEqual(self.run_main("-m", "-r", "Lua, too large",
+                                       "See also"), 0)
+        self.assertEqual(self.saved()["1721254"]["status"], "not adaptable")
+        self.assertEqual(self.saved()["1721254"]["reason"], "Lua, too large")
+        self.assertEqual(self.fetched, [])
+        self.assertFalse((self.dir / "See also.wiki").exists())
+        # A rejected template is not fetched again at the same revision
+        self.assertEqual(self.run_main("See also"), 0)
+        self.assertEqual(self.fetched, [])
+
+    def test_mark_unadaptable_needs_a_reason(self):
+        with mock.patch("sys.stderr"), self.assertRaises(SystemExit) as end:
+            self.run_main("-m", "See also")
+        self.assertEqual(end.exception.code, 2)
+
+    def test_check_updates_reports_edits_renames_and_deletions(self):
+        record = {
+            "1": {"name": "A", "title": "Template:A", "revid": 10,
+                  "status": "not adaptable", "reason": "Lua"},
+            "2": {"name": "B", "title": "Template:B", "revid": 20,
+                  "status": "fetched", "reason": ""},
+            "3": {"name": "C", "title": "Template:C", "revid": 30,
+                  "status": "fetched", "reason": ""},
+            "4": {"name": "D", "title": "Template:D", "revid": 40,
+                  "status": "fetched", "reason": ""},
+        }
+        fetch_template.save_record(self.record, record)
+        latest = {
+            1: {"pageid": 1, "title": "Template:A", "revid": 11},
+            2: {"pageid": 2, "title": "Template:B2", "revid": 20},
+            3: None,
+            4: {"pageid": 4, "title": "Template:D", "revid": 40},
+        }
+        with mock.patch.object(fetch_template, "query_pages",
+                               return_value=latest):
+            self.assertEqual(self.run_main("--check-updates"), 0)
+        lines = [call.args[0] for call in self.printed.call_args_list]
+        self.assertEqual(lines, [
+            "CHANGED  A (not adaptable): edited: revision 10 -> 11",
+            "CHANGED  B (fetched): renamed to Template:B2",
+            "DELETED  C (fetched): page 3 no longer exists",
+            "4 recorded, 3 changed on Wikipedia",
+        ])
+        self.assertEqual(self.saved(), record)
+
+    def test_record_is_sorted_by_page_id(self):
+        fetch_template.save_record(self.record, {
+            "100": {"name": "X"}, "20": {"name": "Y"}, "3": {"name": "Z"}})
+        text = self.record.read_text(encoding="utf-8")
+        self.assertLess(text.index('"3"'), text.index('"20"'))
+        self.assertLess(text.index('"20"'), text.index('"100"'))
 
 
 if __name__ == "__main__":
