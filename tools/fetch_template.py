@@ -17,8 +17,8 @@ the attribution header that tools/check_headers.py requires:
   outside <onlyinclude>, or inside <noinclude>) was removed, since the header
   takes its place;
 * "Needs adapting:", when the text uses what the phpBB Modders wiki cannot run:
-  Lua ({{#invoke:}}), TemplateStyles, the Translate extension's markup, or
-  parser functions and magic words it does not have;
+  Lua ({{#invoke:}}), TemplateStyles, the Translate extension's markup, HTML
+  other than tables, or parser functions and magic words it does not have;
 * the licence notice.
 
 Once adapted and passing check_headers.py, --mark-adapted records it as such.
@@ -103,6 +103,16 @@ MAGIC_WORD = re.compile(
     r"|NAMESPACEE?|SITENAME|(?:CURRENT|LOCAL|REVISION|NUMBEROF)[A-Z]*"
     r"|SERVER(?:NAME)?|SCRIPTPATH|DISPLAYTITLE|DEFAULTSORT|PAGESIZE"
     r"|PROTECTIONLEVEL)$")
+
+# Tags the phpBB Modders wiki allows in articles and templates: its HTML table
+# elements, and the template tags it understands itself
+ALLOWED_TAGS = {
+    "table", "caption", "thead", "tbody", "tfoot", "tr", "th", "td",
+    "noinclude", "includeonly", "onlyinclude",
+}
+
+# Tags reported under their own names above, not again as HTML
+REPORTED_TAGS = {"templatestyles", "translate", "languages"}
 
 # Names that cannot be a file in templates/: subpages and path characters.
 INVALID_NAME = re.compile(r'[/\\<>:"|?*\x00-\x1f]|^\.|^\s|\s$')
@@ -313,6 +323,13 @@ def needs(text: str) -> list:
     if re.search(r"<(?:translate|languages)\b|<!--T:\d+-->", text,
                  re.IGNORECASE):
         problems.append("Translate markup (<translate>, <languages/>)")
+    # The wiki allows HTML tables and nothing else; other tags show as text
+    tags = {tag.lower() for tag in re.findall(r"</?([a-zA-Z][a-zA-Z0-9]*)",
+                                              text)}
+    html = sorted(tags - ALLOWED_TAGS - REPORTED_TAGS)
+    if html:
+        problems.append("HTML the wiki shows as text: <"
+                        + ">, <".join(html) + ">")
     unsupported = set()
     for match in re.finditer(r"\{\{\s*(#?[A-Za-z][\w ]*?)\s*:", text):
         word = match.group(1).strip().lower()
@@ -464,6 +481,20 @@ def check_updates(record: dict) -> int:
     return 0
 
 
+def redirected(name: str, page: dict) -> bool:
+    """
+    Whether a name is only a redirect to another template on the wiki, such as
+    Smaller to Small; prints where it points. A template is kept under its own
+    name, so the redirect's target should be fetched instead.
+    """
+    if page["title"] == PREFIX + name:
+        return False
+    target = page["title"][len(PREFIX):] if page["title"].startswith(
+        PREFIX) else page["title"]
+    print(f"REDIRECT {name}: redirects to {page['title']}; use {target!r}")
+    return True
+
+
 def mark_unadaptable(site_id: str, names: list, reason: str,
                      record: dict) -> int:
     """Record templates as not adaptable; return the exit status."""
@@ -474,6 +505,9 @@ def mark_unadaptable(site_id: str, names: list, reason: str,
         page = pages[name]
         if page is None:
             print(f"MISSING  {name}: no such template on {site['label']}")
+            failed += 1
+            continue
+        if redirected(name, page):
             failed += 1
             continue
         record[record_key(site_id, page["pageid"])] = record_entry(
@@ -528,6 +562,9 @@ def fetch_templates(names: list, args: argparse.Namespace,
         page = info[name]
         if page is None:
             print(f"MISSING  {name}: no such template on {site['label']}")
+            failed += 1
+            continue
+        if redirected(name, page):
             failed += 1
             continue
         entry = record.get(record_key(site_id, page["pageid"]))
