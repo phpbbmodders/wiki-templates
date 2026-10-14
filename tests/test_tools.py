@@ -29,6 +29,8 @@ def load(name):
 
 fetch_template = load("fetch_template")
 check_headers = load("check_headers")
+sys.path.insert(0, str(TOOLS))
+compare_template = load("compare_template")
 
 PAGE = {"title": "Template:See also", "revid": 1292725734,
         "timestamp": "2026-07-09T05:15:34Z"}
@@ -222,6 +224,82 @@ class FandomTests(unittest.TestCase):
         self.assertEqual(self.problems_for(other_wiki),
                          ["the source and its history are on different "
                           "wikis"])
+
+
+class CompareTests(unittest.TestCase):
+    """tools/compare_template.py, with both renderings replaced by stubs."""
+
+    def test_visible_text_skips_markup_styles_and_extra_space(self):
+        html = ('<div class="hatnote"><style>.x{}</style>Main&nbsp;article: '
+                '<a href="/wiki/A">A</a></div>\n<p>and\n  more</p>')
+        self.assertEqual(compare_template.visible_text(html),
+                         "Main article: A and more")
+
+    def test_word_diff_marks_removed_and_added_words(self):
+        self.assertEqual(compare_template.word_diff("a b c", "a x c d"),
+                         "a [-b-] {+x+} c {+d+}")
+
+    def test_the_source_line_names_the_wiki(self):
+        self.assertEqual(compare_template.site_of(
+            "Source: https://www.mediawiki.org/wiki/Template:Note"),
+            fetch_template.SITES["mediawiki"])
+        self.assertIsNone(compare_template.site_of(
+            "Source: https://templates.fandom.com/wiki/Template:Nowrap"))
+        for text in ("no source", "Source: https://wiki.example.org/x"):
+            with self.subTest(text=text):
+                with self.assertRaises(ValueError):
+                    compare_template.site_of(text)
+
+    def run_compare(self, files, board, source):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "board").mkdir()
+            (root / "board" / "config.php").touch()
+            (root / "boot.php").touch()
+            (root / "t").mkdir()
+            for name, text in files.items():
+                (root / "t" / f"{name}.wiki").write_text(text,
+                                                         encoding="utf-8")
+            argv = ["compare_template.py", "-b", str(root / "board"),
+                    "-B", str(root / "boot.php"), "-d", str(root / "t"),
+                    "--all"]
+            with mock.patch.object(sys, "argv", argv), \
+                    mock.patch.object(compare_template, "render_on_board",
+                                      return_value=board), \
+                    mock.patch.object(compare_template, "reference",
+                                      side_effect=lambda site, call:
+                                      source[call]), \
+                    mock.patch.object(compare_template.time, "sleep"), \
+                    mock.patch("builtins.print") as printed:
+                status = compare_template.main()
+        return status, [call.args[0].split("\n")[0]
+                        for call in printed.call_args_list]
+
+    def test_matching_and_differing_examples(self):
+        header = ("<noinclude>\nSource: https://en.wikipedia.org/wiki/"
+                  "Template:Main\nExample: {{Main|A}}\nExample: {{Main|A|B}}"
+                  "\n</noinclude>")
+        status, lines = self.run_compare(
+            {"Main": header + "x"},
+            {"{{Main|A}}": "Main article: <a>A</a>",
+             "{{Main|A|B}}": "Main articles: Aand B"},
+            {"{{Main|A}}": "<div>Main article: A</div>",
+             "{{Main|A|B}}": "Main articles: A and B"})
+        self.assertEqual(status, 1)
+        self.assertEqual(lines, ["MATCH    Main: {{Main|A}}",
+                                 "DIFFER   Main: {{Main|A|B}}"])
+
+    def test_no_examples_fails_and_fandom_renders_on_the_board_only(self):
+        fandom = ("<noinclude>\nSource: https://templates.fandom.com/wiki/"
+                  "Template:Nowrap\nExample: {{Nowrap|a b}}\n</noinclude>")
+        bare = "<noinclude>\nSource: https://en.wikipedia.org/wiki/x\n" \
+               "</noinclude>"
+        status, lines = self.run_compare(
+            {"Bare": bare, "Nowrap": fandom}, {"{{Nowrap|a b}}": "a b"}, {})
+        self.assertEqual(status, 1)
+        self.assertEqual(lines, [
+            "FAILED   Bare: no Example lines in its header",
+            "BOARD ONLY Nowrap: {{Nowrap|a b}}"])
 
 
 class LicenceTests(unittest.TestCase):

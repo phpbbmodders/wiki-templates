@@ -35,6 +35,31 @@ python3 tools/fetch_template.py --site mediawiki Note
 
 It records the exact revision copied, and removes the source's page-only part (its documentation and categories: what is outside `<onlyinclude>`, or inside `<noinclude>`), since the header takes its place. It leaves `Changes: TODO` for you to fill in, and adds a `Needs adapting:` line when the text uses something the wiki can't run: Lua (`{{#invoke:}}`), TemplateStyles, the Translate extension's `<translate>` markup, or a parser function or magic word the wiki doesn't have. It also lists the other templates each one calls. It never replaces a file that's already here unless given `--force`, and `--dry-run` only reports. Then adapt the template by hand: rewrite any Lua part in plain wiki text, and write down what you changed.
 
+### Checking a template against the original
+
+Give each template one or more `Example:` lines in its header, one call each. They also show as documentation on the template's own page on a board:
+
+```text
+Example: {{Main|History of phpBB}}
+Example: {{Main|Installation|Upgrading}}
+```
+
+[`tools/compare_template.py`](tools/compare_template.py) renders each example twice and compares the text a reader sees:
+
+- **on the wiki it came from,** with the original template, through that wiki's API (`action=parse`). That is the template's current version there, which may be newer than the one copied.
+- **on a phpBB test board** with the phpBB Modders wiki extension, using this repository's templates, through [`tools/render_on_board.php`](tools/render_on_board.php). It loads the board with [seed-forum](https://github.com/phpbbmodders/seed-forum)'s `bin/seed-bootstrap.php`, puts every template in this repository on the board inside a database transaction, and rolls it back afterwards, so the board is left as it was.
+
+```bash
+python3 tools/compare_template.py --board ~/boards/wiki Main Nowrap
+```
+
+Each example prints `MATCH`, or `DIFFER` with both texts and the words that differ. Templates copied from Fandom are rendered on the board only (`BOARD ONLY`), since Fandom's terms forbid automated access. `--board` defaults to `$WIKI_TEMPLATES_BOARD`, and `--bootstrap` to `$SEED_FORUM_BOOTSTRAP`, or to a seed-forum checkout next to this repository.
+
+Two things it catches often:
+
+- **Inline HTML.** The wiki only allows HTML tables in articles and templates, so a `<span>`, `<div>` or `<b>` from the original is shown as text.
+- **Spaces lost at the edges of `{{#if:}}` and similar.** Their results are trimmed. On Wikipedia `&#32;` keeps such a space, but the wiki currently loses it too, so write `&nbsp;` for now.
+
 ### Templates from a Fandom wiki, by hand
 
 Fandom's [terms of use](https://www.fandom.com/terms-of-use) forbid "any robot, spider, scraper or other automated means" without written permission, so `fetch_template.py` never fetches from Fandom. A template there can still be copied by hand, if the wiki's licence allows it:
