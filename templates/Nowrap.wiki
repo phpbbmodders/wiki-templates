@@ -1,0 +1,10 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Nowrap
+History: https://en.wikipedia.org/w/index.php?title=Template:Nowrap&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Nowrap&oldid=692794261 (11/28/2015 10:13 AM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten without the <span class="nowrap"> the wiki does not allow: every space in the text becomes a non-breaking space (#replace with an empty search), so the words stay on one line; unlike the original, the text can still break at a hyphen; removed the source's documentation and categories.
+Example: {{Nowrap|keep these words together}}
+Example: {{Nowrap|10 km}}
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>{{#replace:{{{1}}}||&nbsp;}}

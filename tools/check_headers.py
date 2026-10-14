@@ -18,7 +18,9 @@ Each templates/*.wiki file must start with a <noinclude> block holding:
   https://creativecommons.org/licenses/by-sa/4.0/;
 
 and no "Needs adapting:" line, which tools/fetch_template.py writes while a
-template still uses what the wiki cannot run.
+template still uses what the wiki cannot run. Only "Example:" and "Expect:"
+lines may hold {{ or }}: the header is the template page's documentation on
+a board, so a call anywhere else in it would be run there.
 
 Input: the templates directory (default: templates/ next to this script's
 parent). Output: one line per problem on stderr. Exit status: 0 when every
@@ -102,6 +104,14 @@ def problems(path: Path) -> list:
               if not pattern.search(header.group(1))]
     if re.search(r"^Changes: TODO\b", header.group(1), re.M):
         found.append("the list of changes still says TODO")
+    # The header is the template page's documentation on a board, so a call
+    # written in it would be run there; only examples are meant to be
+    for line in header.group(1).splitlines():
+        if ("{{" in line or "}}" in line) and not line.startswith(
+                ("Example: ", "Expect: ")):
+            found.append("a header line other than Example and Expect holds "
+                         "{{ or }}, which the board would run: "
+                         + line.split(":")[0])
     if re.search(r"^Needs adapting:", header.group(1), re.M):
         found.append("still needs adapting (see its Needs adapting line)")
     return found

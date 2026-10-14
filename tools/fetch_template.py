@@ -307,7 +307,7 @@ def needs(text: str) -> list:
     """What in a template's text the phpBB Modders wiki cannot run."""
     problems = []
     if re.search(r"\{\{\s*#invoke\s*:", text, re.IGNORECASE):
-        problems.append("Lua ({{#invoke:}})")
+        problems.append("Lua (#invoke)")
     if re.search(r"<templatestyles\b", text, re.IGNORECASE):
         problems.append("TemplateStyles")
     if re.search(r"<(?:translate|languages)\b|<!--T:\d+-->", text,

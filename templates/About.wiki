@@ -3,7 +3,7 @@ Source: https://en.wikipedia.org/wiki/Template:About
 History: https://en.wikipedia.org/w/index.php?title=Template:About&action=history
 Revision: https://en.wikipedia.org/w/index.php?title=Template:About&oldid=1044582448 (09/16/2021 12:56 AM UTC)
 Adapted by phpBB Modders.
-Changes: rewritten in plain wiki text without Lua (Module:About): one other use and its article, with "other uses" and PAGENAME (disambiguation) when left out; no further use and article pairs, no section or text options; &#32; between the two sentences, since {{#if:}} trims a plain space there; shown in italics instead of the hatnote style, since the wiki allows no <div>; removed the source's documentation and categories.
+Changes: rewritten in plain wiki text without Lua (Module:About): one other use and its article, with "other uses" and PAGENAME (disambiguation) when left out; no further use and article pairs, no section or text options; &#32; between the two sentences, since #if trims a plain space there; shown in italics instead of the hatnote style, since the wiki allows no <div>; removed the source's documentation and categories.
 Example: {{About|the forum software|the bulletin board in general|Bulletin board}}
 Example: {{About|the forum software}}
 Example: {{About||the bulletin board in general|Bulletin board}}

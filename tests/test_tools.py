@@ -89,7 +89,7 @@ class TextTests(unittest.TestCase):
                 "{{#if:a|b}}{{#tag:ref|x}}{{formatnum:5}}{{lc:A}}"
                 "{{PAGENAME}}{{BASEPAGENAME}}{{CURRENTYEAR}}")
         self.assertEqual(fetch_template.needs(text), [
-            "Lua ({{#invoke:}})", "TemplateStyles",
+            "Lua (#invoke)", "TemplateStyles",
             "unsupported #tag, BASEPAGENAME, formatnum"])
 
     def test_translate_markup_is_flagged(self):
@@ -124,7 +124,7 @@ class HeaderTests(unittest.TestCase):
         return path
 
     def test_fetched_header_is_held_back_until_adapted(self):
-        header = fetch_template.header(ENWIKI, PAGE, ["Lua ({{#invoke:}})"],
+        header = fetch_template.header(ENWIKI, PAGE, ["Lua (#invoke)"],
                                        True)
         self.assertIn("&oldid=1292725734 (07/09/2026 5:15 AM UTC)", header)
         self.assertNotIn("{{Documentation}}", header)
@@ -133,6 +133,17 @@ class HeaderTests(unittest.TestCase):
         self.assertEqual(found, [
             "the list of changes still says TODO",
             "still needs adapting (see its Needs adapting line)"])
+
+    def test_calls_are_only_allowed_in_example_and_expect_lines(self):
+        header = fetch_template.header(ENWIKI, PAGE, [], True).replace(
+            "Changes: TODO.", "Changes: uses {{#if:}} now.").replace(
+            "Licence:", "Example: {{See also|A}}\nExpect: See also: A\n"
+                        "Licence:")
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual(check_headers.problems(
+                self.write(directory, header)),
+                ["a header line other than Example and Expect holds {{ or "
+                 "}}, which the board would run: Changes"])
 
     def test_adapted_header_passes(self):
         header = fetch_template.header(ENWIKI, PAGE, [], True).replace(
