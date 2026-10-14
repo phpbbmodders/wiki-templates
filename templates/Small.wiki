@@ -1,0 +1,9 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Small
+History: https://en.wikipedia.org/w/index.php?title=Template:Small&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Small&oldid=1313016425 (09/23/2025 9:17 PM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten with phpBB's [size=85] BBCode instead of the <span style="font-size: 85%"> the wiki does not allow, which gives the same size; no check for unknown parameters (Lua) or tracking category; removed the source's documentation and categories.
+Example: {{Small|This is small text.}}
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>[size=85]{{{1}}}[/size]

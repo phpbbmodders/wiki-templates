@@ -1,0 +1,9 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Large
+History: https://en.wikipedia.org/w/index.php?title=Template:Large&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Large&oldid=1133894340 (01/16/2023 1:12 AM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten with phpBB's [size=120] BBCode instead of the <span style="font-size: 120%"> the wiki does not allow, which gives the same size; removed the source's documentation and categories.
+Example: {{Large|This is large text.}}
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>[size=120]{{{1}}}[/size]

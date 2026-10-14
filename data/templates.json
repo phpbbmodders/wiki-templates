@@ -6,6 +6,13 @@
     "status": "adapted",
     "title": "Template:Stub"
   },
+  "enwiki:828359": {
+    "name": "Center",
+    "reason": "needs a <div> to centre its text, and phpBB has no centring BBCode out of the box",
+    "revid": 1282577637,
+    "status": "not adaptable",
+    "title": "Template:Center"
+  },
   "enwiki:1208356": {
     "name": "Main",
     "reason": "",
@@ -48,6 +55,13 @@
     "status": "adapted",
     "title": "Template:Update"
   },
+  "enwiki:2385304": {
+    "name": "Small",
+    "reason": "",
+    "revid": 1313016425,
+    "status": "adapted",
+    "title": "Template:Small"
+  },
   "enwiki:2425121": {
     "name": "Under construction",
     "reason": "",
@@ -61,6 +75,13 @@
     "revid": 1044582448,
     "status": "adapted",
     "title": "Template:About"
+  },
+  "enwiki:8183126": {
+    "name": "Large",
+    "reason": "",
+    "revid": 1133894340,
+    "status": "adapted",
+    "title": "Template:Large"
   },
   "enwiki:10160967": {
     "name": "More citations needed",

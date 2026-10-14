@@ -100,7 +100,13 @@ class TextTests(unittest.TestCase):
 
     def test_plain_template_needs_nothing(self):
         self.assertEqual(fetch_template.needs(
-            '<span class="nowrap">{{{1}}}</span>'), [])
+            "<table><tr><td>{{{1}}}</td></tr></table>"), [])
+
+    def test_html_other_than_tables_is_flagged(self):
+        self.assertEqual(
+            fetch_template.needs('<span class="nowrap">{{{1}}}</span>'
+                                 '<div><br/></div>'),
+            ["HTML the wiki shows as text: <br>, <div>, <span>"])
 
     def test_called_templates_skip_magic_words_and_parameters(self):
         text = ("{{Hatnote|x}} {{ ambox }} {{{1|{{Main}}}}} {{PAGENAME}} "
@@ -368,7 +374,7 @@ class CommandTests(unittest.TestCase):
         def fake_fetch(site, names, content=True):
             if content:
                 self.fetched.extend(names)
-            return {name: (dict(self.INFO, text="<span>{{{1}}}</span>",
+            return {name: (dict(self.INFO, text="[b]{{{1}}}[/b]",
                                 timestamp="2025-05-30T12:00:00Z")
                            if name == "See also" else None)
                     for name in names}
@@ -402,13 +408,24 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(self.fetched, ["See also"])
         self.assertFalse((self.dir / "See also.wiki").exists())
 
+    def test_a_redirect_is_not_fetched_under_its_own_name(self):
+        redirect = dict(self.INFO, title="Template:Small")
+        with mock.patch.object(fetch_template, "fetch",
+                               return_value={"Smaller": redirect}):
+            self.assertEqual(self.run_main("Smaller"), 1)
+        self.assertEqual(self.printed.call_args.args[0],
+                         "REDIRECT Smaller: redirects to Template:Small; "
+                         "use 'Small'")
+        self.assertFalse((self.dir / "Smaller.wiki").exists())
+        self.assertEqual(self.saved(), {})
+
     def test_existing_file_is_not_replaced_without_force(self):
         target = self.dir / "See also.wiki"
         target.write_text("edited", encoding="utf-8")
         self.assertEqual(self.run_main("See also"), 1)
         self.assertEqual(target.read_text(encoding="utf-8"), "edited")
         self.assertEqual(self.run_main("--force", "See also"), 0)
-        self.assertIn("<span>{{{1}}}</span>",
+        self.assertIn("[b]{{{1}}}[/b]",
                       target.read_text(encoding="utf-8"))
 
     def test_missing_template_fails_and_dry_run_writes_nothing(self):
