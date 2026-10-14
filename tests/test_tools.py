@@ -179,7 +179,9 @@ class LicenceTests(unittest.TestCase):
             return fetch_template.check_licence(ENWIKI)
 
     def test_a_wiki_that_is_not_cc_by_sa_is_refused(self):
-        for text in ("All rights reserved", "CC BY-NC 4.0", ""):
+        for text in ("All rights reserved", "CC BY-NC 4.0", "CC BY-NC-SA 3.0",
+                     "Creative Commons Attribution-NonCommercial-ShareAlike",
+                     "CC BY-ND 4.0", ""):
             with self.subTest(text=text):
                 with self.assertRaises(fetch_template.FetchError):
                     self.licence(text)
