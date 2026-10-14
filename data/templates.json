@@ -1,0 +1,30 @@
+{
+  "enwiki:1208356": {
+    "name": "Main",
+    "reason": "",
+    "revid": 1363280785,
+    "status": "adapted",
+    "title": "Template:Main"
+  },
+  "enwiki:1721254": {
+    "name": "See also",
+    "reason": "",
+    "revid": 1292725734,
+    "status": "adapted",
+    "title": "Template:See also"
+  },
+  "enwiki:1721317": {
+    "name": "Further",
+    "reason": "",
+    "revid": 1337132284,
+    "status": "adapted",
+    "title": "Template:Further"
+  },
+  "enwiki:2468023": {
+    "name": "About",
+    "reason": "",
+    "revid": 1044582448,
+    "status": "adapted",
+    "title": "Template:About"
+  }
+}

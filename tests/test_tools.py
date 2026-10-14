@@ -401,6 +401,21 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(self.run_main("See also"), 0)
         self.assertEqual(self.fetched, [])
 
+    def test_mark_adapted_needs_a_passing_file(self):
+        self.assertEqual(self.run_main("See also"), 0)
+        # Fetched as it is: its Changes line still says TODO
+        self.assertEqual(self.run_main("-a", "See also"), 1)
+        self.assertEqual(self.saved()["enwiki:1721254"]["status"], "fetched")
+        path = self.dir / "See also.wiki"
+        path.write_text(path.read_text(encoding="utf-8").replace(
+            "Changes: TODO", "Changes: none"), encoding="utf-8")
+        self.assertEqual(self.run_main("-a", "See also"), 0)
+        self.assertEqual(self.saved()["enwiki:1721254"],
+                         {"name": "See also", "reason": "",
+                          "revid": 1292725734, "status": "adapted",
+                          "title": "Template:See also"})
+        self.assertEqual(self.run_main("-a", "Main"), 1)
+
     def test_mark_unadaptable_needs_a_reason(self):
         with mock.patch("sys.stderr"), self.assertRaises(SystemExit) as end:
             self.run_main("-m", "See also")
