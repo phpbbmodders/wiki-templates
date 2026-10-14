@@ -9,6 +9,18 @@ A template's examples are the "Example:" lines in its header, one call each:
 
 They also show as documentation on the template's own page on a board.
 
+When an adaptation deliberately differs from the original, for example
+leaving out links that only make sense on Wikipedia, an "Expect:" line right
+under the example gives wiki text the example should render the same as:
+
+    Example: {{Stub}}
+    Expect: This article is a stub. You can help {{SITENAME}} by adding ...
+
+The expected text is rendered on the board too, so magic words work. The
+example is then compared with it instead of the original (EXPECTED when they
+match), and the original's text is still printed, so the difference can be
+reviewed.
+
 For each example:
 
 * the source wiki renders the call with the original template, through its
@@ -23,10 +35,10 @@ For each example:
 Templates copied from Fandom have no automatic reference, since Fandom's
 terms forbid automated access; their examples are rendered on the board only.
 
-Input: template names, or --all. Output: one line per example (MATCH, DIFFER
-or BOARD ONLY) with a word diff for those that differ. Exit status: 0 when
-every example matches, 1 when any differs, a template has no example, or a
-render fails, 2 for bad arguments.
+Input: template names, or --all. Output: one line per example (MATCH,
+EXPECTED, DIFFER or BOARD ONLY) with a word diff for those that differ.
+Exit status: 0 when every example matches, 1 when any differs, a template
+has no example, or a render fails, 2 for bad arguments.
 """
 
 import argparse
@@ -45,7 +57,7 @@ import fetch_template  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
 RENDERER = Path(__file__).resolve().parent / "render_on_board.php"
-EXAMPLE = re.compile(r"^Example: (.+)$", re.M)
+EXAMPLE = re.compile(r"^Example: (.+)$(?:\nExpect: (.+)$)?", re.M)
 SOURCE = re.compile(r"^Source: (https://[^/\s]+)", re.M)
 RENDER_TIMEOUT_SECONDS = 300
 # Between two parse requests to the source wiki, to stay polite
@@ -212,29 +224,33 @@ def main() -> int:
     failed = 0
     plan = []
     for name in names:
-        calls = EXAMPLE.findall(templates[name])
+        examples = EXAMPLE.findall(templates[name])
         try:
             site = site_of(templates[name])
         except ValueError as error:
             print(f"FAILED   {name}: {error}")
             failed += 1
             continue
-        if not calls:
+        if not examples:
             print(f"FAILED   {name}: no Example lines in its header")
             failed += 1
             continue
-        plan.extend((name, site, call) for call in calls)
+        plan.extend((name, site, call, expect)
+                    for call, expect in examples)
 
     if plan:
+        # The expected texts are rendered too, so magic words work in them
+        wanted = [call for _, _, call, _ in plan]
+        wanted += [expect for _, _, _, expect in plan if expect]
         try:
             ours = render_on_board(args.board, args.bootstrap, templates,
-                                   [call for _, _, call in plan])
+                                   list(dict.fromkeys(wanted)))
         except (RuntimeError, subprocess.TimeoutExpired,
                 json.JSONDecodeError) as error:
             print(f"error: {error}", file=sys.stderr)
             return 1
 
-    for index, (name, site, call) in enumerate(plan):
+    for index, (name, site, call, expect) in enumerate(plan):
         board_html = ours.get(call, "")
         board_text = visible_text(board_html)
         if site is None:
@@ -249,7 +265,21 @@ def main() -> int:
             failed += 1
             continue
         source_text = visible_text(source_html)
-        if source_text == board_text:
+        if expect:
+            # A deliberate difference: compared with what is expected, and
+            # the original printed so the difference can be reviewed
+            expected = visible_text(ours.get(expect, ""))
+            if expected == board_text:
+                print(f"EXPECTED {name}: {call}\n"
+                      f"    {site['label']}: {source_text}\n"
+                      f"    board: {board_text}")
+            else:
+                failed += 1
+                print(f"DIFFER   {name}: {call}\n"
+                      f"    expected: {expected}\n"
+                      f"    board: {board_text}\n"
+                      f"    diff: {word_diff(expected, board_text)}")
+        elif source_text == board_text:
             print(f"MATCH    {name}: {call}")
         else:
             failed += 1
