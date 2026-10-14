@@ -31,6 +31,7 @@ check_headers = load("check_headers")
 
 PAGE = {"title": "Template:See also", "revid": 1292725734,
         "timestamp": "2026-07-09T05:15:34Z"}
+ENWIKI = fetch_template.SITES["enwiki"]
 
 
 class NameTests(unittest.TestCase):
@@ -48,10 +49,16 @@ class NameTests(unittest.TestCase):
                     fetch_template.template_name(raw)
 
     def test_page_urls(self):
-        self.assertEqual(fetch_template.page_url("Template:See also"),
-                         "https://en.wikipedia.org/wiki/Template:See_also")
         self.assertEqual(
-            fetch_template.page_url("Template:See also", action="history"),
+            fetch_template.page_url(ENWIKI, "Template:See also"),
+            "https://en.wikipedia.org/wiki/Template:See_also")
+        self.assertEqual(
+            fetch_template.page_url(fetch_template.SITES["mediawiki"],
+                                    "Template:Note"),
+            "https://www.mediawiki.org/wiki/Template:Note")
+        self.assertEqual(
+            fetch_template.page_url(ENWIKI, "Template:See also",
+                                    action="history"),
             "https://en.wikipedia.org/w/index.php?title=Template:See_also"
             "&action=history")
 
@@ -67,6 +74,13 @@ class TextTests(unittest.TestCase):
         self.assertEqual(fetch_template.without_noinclude("plain"),
                          ("plain", False))
 
+    def test_only_the_onlyinclude_part_is_kept(self):
+        text = ("<languages/>\nDocs {{Documentation}}\n<onlyinclude>{{#if:"
+                "{{{1|}}}|<b>{{{1}}}</b>}}</onlyinclude>\nMore docs "
+                "<onlyinclude>!</onlyinclude>[[Category:X]]")
+        self.assertEqual(fetch_template.without_noinclude(text),
+                         ("{{#if:{{{1|}}}|<b>{{{1}}}</b>}}!", True))
+
     def test_lua_templatestyles_and_unsupported_functions_are_flagged(self):
         text = ('{{#invoke:Hatnote|x}}<templatestyles src="a.css" />'
                 "{{#if:a|b}}{{#tag:ref|x}}{{formatnum:5}}{{lc:A}}"
@@ -74,6 +88,12 @@ class TextTests(unittest.TestCase):
         self.assertEqual(fetch_template.needs(text), [
             "Lua ({{#invoke:}})", "TemplateStyles",
             "unsupported #tag, BASEPAGENAME, formatnum"])
+
+    def test_translate_markup_is_flagged(self):
+        self.assertEqual(
+            fetch_template.needs(
+                "'''<translate><!--T:2--> Note:</translate>'''"),
+            ["Translate markup (<translate>, <languages/>)"])
 
     def test_plain_template_needs_nothing(self):
         self.assertEqual(fetch_template.needs(
@@ -101,7 +121,8 @@ class HeaderTests(unittest.TestCase):
         return path
 
     def test_fetched_header_is_held_back_until_adapted(self):
-        header = fetch_template.header(PAGE, ["Lua ({{#invoke:}})"], True)
+        header = fetch_template.header(ENWIKI, PAGE, ["Lua ({{#invoke:}})"],
+                                       True)
         self.assertIn("&oldid=1292725734 (07/09/2026 5:15 AM UTC)", header)
         self.assertNotIn("{{Documentation}}", header)
         with tempfile.TemporaryDirectory() as directory:
@@ -111,11 +132,65 @@ class HeaderTests(unittest.TestCase):
             "still needs adapting (see its Needs adapting line)"])
 
     def test_adapted_header_passes(self):
-        header = fetch_template.header(PAGE, [], True).replace(
+        header = fetch_template.header(ENWIKI, PAGE, [], True).replace(
             "Changes: TODO.", "Changes: rewritten without Lua.")
         with tempfile.TemporaryDirectory() as directory:
             self.assertEqual(
                 check_headers.problems(self.write(directory, header)), [])
+
+
+class HostTests(unittest.TestCase):
+    """Which wikis the header check accepts as a source."""
+
+    def problems_for(self, header_text):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "Note.wiki"
+            path.write_text(header_text + "x\n", encoding="utf-8")
+            return check_headers.problems(path)
+
+    def header_for(self, site, page=None):
+        page = page or dict(PAGE, title="Template:Note")
+        return fetch_template.header(site, page, [], False).replace(
+            "Changes: TODO", "Changes: none")
+
+    def test_every_fetchable_wiki_is_accepted(self):
+        for site_id, site in fetch_template.SITES.items():
+            with self.subTest(site=site_id):
+                self.assertEqual(self.problems_for(self.header_for(site)), [])
+
+    def test_another_wiki_and_mixed_wikis_are_refused(self):
+        other = {"base": "https://example.fandom.com"}
+        self.assertEqual(self.problems_for(self.header_for(other)),
+                         ["header has no source URL",
+                          "header has no history URL"])
+        mixed = self.header_for(ENWIKI).replace(
+            "History: https://en.wikipedia.org",
+            "History: https://meta.wikimedia.org")
+        self.assertEqual(self.problems_for(mixed), [
+            "the source and its history are on different wikis"])
+
+
+class LicenceTests(unittest.TestCase):
+    """Only a wiki that reports a CC BY-SA licence is fetched from."""
+
+    def licence(self, text, url=""):
+        reply = {"query": {"rightsinfo": {"text": text, "url": url}}}
+        with mock.patch.object(fetch_template, "api_get", return_value=reply):
+            return fetch_template.check_licence(ENWIKI)
+
+    def test_a_wiki_that_is_not_cc_by_sa_is_refused(self):
+        for text in ("All rights reserved", "CC BY-NC 4.0", "CC BY-NC-SA 3.0",
+                     "Creative Commons Attribution-NonCommercial-ShareAlike",
+                     "CC BY-ND 4.0", ""):
+            with self.subTest(text=text):
+                with self.assertRaises(fetch_template.FetchError):
+                    self.licence(text)
+
+    def test_cc_by_sa_is_accepted(self):
+        self.assertIn("4.0", self.licence(
+            "Creative Commons Attribution-Share Alike 4.0",
+            "https://creativecommons.org/licenses/by-sa/4.0/"))
+        self.assertEqual(self.licence("CC-BY-SA"), "CC-BY-SA")
 
 
 class CommandTests(unittest.TestCase):
@@ -131,7 +206,7 @@ class CommandTests(unittest.TestCase):
         self.record = self.dir / "data" / "templates.json"
         self.fetched = []
 
-        def fake_fetch(names, content=True):
+        def fake_fetch(site, names, content=True):
             if content:
                 self.fetched.extend(names)
             return {name: (dict(self.INFO, text="<span>{{{1}}}</span>",
@@ -141,6 +216,10 @@ class CommandTests(unittest.TestCase):
         patcher = mock.patch.object(fetch_template, "fetch", fake_fetch)
         patcher.start()
         self.addCleanup(patcher.stop)
+        licence = mock.patch.object(fetch_template, "check_licence",
+                                    return_value="CC BY-SA 4.0")
+        licence.start()
+        self.addCleanup(licence.stop)
         printer = mock.patch("builtins.print")
         self.printed = printer.start()
         self.addCleanup(printer.stop)
@@ -156,7 +235,7 @@ class CommandTests(unittest.TestCase):
 
     def test_fetch_records_the_page_id_and_skips_a_known_revision(self):
         self.assertEqual(self.run_main("See also"), 0)
-        self.assertEqual(self.saved(), {"1721254": {
+        self.assertEqual(self.saved(), {"enwiki:1721254": {
             "name": "See also", "reason": "", "revid": 1292725734,
             "status": "fetched", "title": "Template:See also"}})
         (self.dir / "See also.wiki").unlink()
@@ -181,8 +260,9 @@ class CommandTests(unittest.TestCase):
     def test_mark_unadaptable_records_without_downloading(self):
         self.assertEqual(self.run_main("-m", "-r", "Lua, too large",
                                        "See also"), 0)
-        self.assertEqual(self.saved()["1721254"]["status"], "not adaptable")
-        self.assertEqual(self.saved()["1721254"]["reason"], "Lua, too large")
+        entry = self.saved()["enwiki:1721254"]
+        self.assertEqual(entry["status"], "not adaptable")
+        self.assertEqual(entry["reason"], "Lua, too large")
         self.assertEqual(self.fetched, [])
         self.assertFalse((self.dir / "See also.wiki").exists())
         # A rejected template is not fetched again at the same revision
@@ -196,40 +276,57 @@ class CommandTests(unittest.TestCase):
 
     def test_check_updates_reports_edits_renames_and_deletions(self):
         record = {
-            "1": {"name": "A", "title": "Template:A", "revid": 10,
-                  "status": "not adaptable", "reason": "Lua"},
-            "2": {"name": "B", "title": "Template:B", "revid": 20,
-                  "status": "fetched", "reason": ""},
-            "3": {"name": "C", "title": "Template:C", "revid": 30,
-                  "status": "fetched", "reason": ""},
-            "4": {"name": "D", "title": "Template:D", "revid": 40,
-                  "status": "fetched", "reason": ""},
+            "enwiki:1": {"name": "A", "title": "Template:A", "revid": 10,
+                         "status": "not adaptable", "reason": "Lua"},
+            "enwiki:2": {"name": "B", "title": "Template:B", "revid": 20,
+                         "status": "fetched", "reason": ""},
+            "enwiki:3": {"name": "C", "title": "Template:C", "revid": 30,
+                         "status": "fetched", "reason": ""},
+            "commons:4": {"name": "D", "title": "Template:D", "revid": 40,
+                          "status": "fetched", "reason": ""},
+            "commons:1": {"name": "E", "title": "Template:E", "revid": 50,
+                          "status": "fetched", "reason": ""},
         }
         fetch_template.save_record(self.record, record)
         latest = {
-            1: {"pageid": 1, "title": "Template:A", "revid": 11},
-            2: {"pageid": 2, "title": "Template:B2", "revid": 20},
-            3: None,
-            4: {"pageid": 4, "title": "Template:D", "revid": 40},
+            "English Wikipedia": {
+                1: {"pageid": 1, "title": "Template:A", "revid": 11},
+                2: {"pageid": 2, "title": "Template:B2", "revid": 20},
+                3: None},
+            "Wikimedia Commons": {
+                4: {"pageid": 4, "title": "Template:D", "revid": 40},
+                1: {"pageid": 1, "title": "Template:E", "revid": 51}},
         }
-        with mock.patch.object(fetch_template, "query_pages",
-                               return_value=latest):
+
+        def fake_query(site, key, values, content):
+            self.assertEqual((key, content), ("pageids", False))
+            return {value: latest[site["label"]][value] for value in values}
+        with mock.patch.object(fetch_template, "query_pages", fake_query):
             self.assertEqual(self.run_main("--check-updates"), 0)
         lines = [call.args[0] for call in self.printed.call_args_list]
         self.assertEqual(lines, [
             "CHANGED  A (not adaptable): edited: revision 10 -> 11",
             "CHANGED  B (fetched): renamed to Template:B2",
             "DELETED  C (fetched): page 3 no longer exists",
-            "4 recorded, 3 changed on Wikipedia",
+            "CHANGED  E (fetched, commons): edited: revision 50 -> 51",
+            "5 recorded, 4 changed since",
         ])
         self.assertEqual(self.saved(), record)
 
+    def test_old_keys_without_a_wiki_are_read_as_english_wikipedia(self):
+        self.record.parent.mkdir(parents=True)
+        self.record.write_text('{"1721254": {"name": "See also"}}',
+                               encoding="utf-8")
+        self.assertEqual(fetch_template.load_record(self.record),
+                         {"enwiki:1721254": {"name": "See also"}})
+
     def test_record_is_sorted_by_page_id(self):
         fetch_template.save_record(self.record, {
-            "100": {"name": "X"}, "20": {"name": "Y"}, "3": {"name": "Z"}})
-        text = self.record.read_text(encoding="utf-8")
-        self.assertLess(text.index('"3"'), text.index('"20"'))
-        self.assertLess(text.index('"20"'), text.index('"100"'))
+            "enwiki:100": {"name": "X"}, "enwiki:20": {"name": "Y"},
+            "enwiki:3": {"name": "Z"}, "commons:5": {"name": "W"}})
+        keys = list(json.loads(self.record.read_text(encoding="utf-8")))
+        self.assertEqual(keys, ["commons:5", "enwiki:3", "enwiki:20",
+                                "enwiki:100"])
 
 
 if __name__ == "__main__":
