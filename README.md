@@ -29,6 +29,23 @@ python3 tools/fetch_template.py Nowrap "See also"
 
 It records the exact revision copied, and removes Wikipedia's own `<noinclude>` part (its documentation and categories), since the header takes its place. It leaves `Changes: TODO` for you to fill in, and adds a `Needs adapting:` line when the text uses something the wiki can't run: Lua (`{{#invoke:}}`), TemplateStyles, or a parser function or magic word the wiki doesn't have. It also lists the other templates each one calls. It never replaces a file that's already here unless given `--force`, and `--dry-run` only reports. Then adapt the template by hand: rewrite any Lua part in plain wiki text, and write down what you changed.
 
+### The record of fetched and rejected templates
+
+`data/templates.json` (created by the first fetch) records every template fetched or rejected, by its Wikipedia **page ID**, which stays the same when a page is renamed, with the revision that was looked at, its status (`fetched`, `needs adapting` or `not adaptable`) and why. Commit it with the templates, so everyone sees what was already tried.
+
+- A template recorded at its latest revision is not downloaded again: only its page info is read, which is cheap. `--force` fetches it anyway.
+- A template that can't reasonably be adapted, for example one built on a large Lua module, is recorded without writing a file:
+
+  ```bash
+  python3 tools/fetch_template.py --mark-unadaptable Ambox --reason "Lua: Module:Message box is too large to rewrite"
+  ```
+
+- `--check-updates` reports every recorded template that was edited, renamed or deleted on Wikipedia since it was recorded. That covers rejected ones that might be adaptable now and adapted ones that might have fixes worth taking. It changes nothing; fetching or marking a template again records its new revision.
+
+  ```bash
+  python3 tools/fetch_template.py --check-updates
+  ```
+
 One file per template in [`templates/`](templates/), named after the Wikipedia template (`Main.wiki`, `See also.wiki`, ...), so text pasted from Wikipedia finds the same names and parameters. Every file starts with this header:
 
 ```text

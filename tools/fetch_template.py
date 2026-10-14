@@ -16,6 +16,14 @@ the attribution header that tools/check_headers.py requires:
   does not have;
 * the licence notice.
 
+Every template fetched, or rejected with --mark-unadaptable, is recorded in
+data/templates.json by its Wikipedia page ID, which stays the same when a
+page is renamed, with the revision looked at. A template recorded at its
+latest revision is not downloaded again; only its page info is read, which
+is cheap. --check-updates reports recorded templates that were edited,
+renamed or deleted on Wikipedia since, so rejected ones can be looked at
+again and adapted ones can pick up fixes.
+
 check_headers.py fails while "Changes: TODO" or "Needs adapting:" is left, so a
 fetched template cannot be merged before a person has adapted it.
 
@@ -27,8 +35,10 @@ was missing or could not be written, 2 for bad arguments.
 
 import argparse
 import json
+import os
 import re
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.parse
@@ -132,44 +142,95 @@ def api_get(params: dict) -> dict:
     raise FetchError(f"{API_URL}: retries exhausted")
 
 
-def fetch(names: list) -> dict:
+def query_pages(key: str, values: list, content: bool) -> dict:
     """
-    Read the current revision of each template.
+    Look pages up by title ("titles") or page ID ("pageids"), 50 at a time.
 
-    Returns {name: page} where page holds "title" (after redirects), "revid",
-    "timestamp" and "text", or None when Wikipedia has no such template.
+    Returns {value: page} where page holds "pageid", "title" (after
+    normalising and redirects), "revid" and "timestamp" of the latest
+    revision, and "text" when content is asked for; or None when there is no
+    such page. Without content only the page info is read, which is cheap.
     """
     found = {}
-    for start in range(0, len(names), BATCH_SIZE):
-        batch = names[start:start + BATCH_SIZE]
-        data = api_get({
-            "action": "query", "format": "json", "formatversion": "2",
-            "prop": "revisions", "rvprop": "ids|timestamp|content",
-            "rvslots": "main", "redirects": "1",
-            "titles": "|".join(PREFIX + name for name in batch),
-        })
-        query = data.get("query", {})
+    for start in range(0, len(values), BATCH_SIZE):
+        batch = values[start:start + BATCH_SIZE]
+        params = {"action": "query", "format": "json", "formatversion": "2",
+                  "redirects": "1", key: "|".join(str(v) for v in batch)}
+        if content:
+            params.update(prop="revisions", rvprop="ids|timestamp|content",
+                          rvslots="main")
+        else:
+            params.update(prop="info")
+        query = api_get(params).get("query", {})
         # Where each requested title ended up after normalising and redirects
         moved = {}
         for step in query.get("normalized", []) + query.get("redirects", []):
             moved[step["from"]] = step["to"]
-        pages = {page["title"]: page for page in query.get("pages", [])}
-        for name in batch:
-            title = PREFIX + name
-            while title in moved:
-                title = moved[title]
-            page = pages.get(title)
-            if not page or page.get("missing") or not page.get("revisions"):
-                found[name] = None
+        pages = query.get("pages", [])
+        by_title = {page.get("title"): page for page in pages}
+        by_id = {page.get("pageid"): page for page in pages}
+        for value in batch:
+            if key == "pageids":
+                page = by_id.get(value)
+            else:
+                title = value
+                while title in moved:
+                    title = moved[title]
+                page = by_title.get(title)
+            if not page or page.get("missing") or page.get("invalid"):
+                found[value] = None
                 continue
-            revision = page["revisions"][0]
-            found[name] = {
-                "title": page["title"],
-                "revid": revision["revid"],
-                "timestamp": revision["timestamp"],
-                "text": revision["slots"]["main"]["content"],
-            }
+            entry = {"pageid": page["pageid"], "title": page["title"]}
+            if content:
+                revision = page["revisions"][0]
+                entry.update(revid=revision["revid"],
+                             timestamp=revision["timestamp"],
+                             text=revision["slots"]["main"]["content"])
+            else:
+                entry.update(revid=page["lastrevid"],
+                             timestamp=page.get("touched", ""))
+            found[value] = entry
     return found
+
+
+def fetch(names: list, content: bool = True) -> dict:
+    """Look templates up by name; see query_pages()."""
+    pages = query_pages("titles", [PREFIX + name for name in names], content)
+    return {name: pages[PREFIX + name] for name in names}
+
+
+def load_record(path: Path) -> dict:
+    """
+    The record of templates already fetched or rejected, keyed by page ID
+    (as a string, since it is JSON). A missing file is an empty record.
+    """
+    if not path.exists():
+        return {}
+    with path.open(encoding="utf-8") as handle:
+        record = json.load(handle)
+    if not isinstance(record, dict):
+        raise ValueError(f"{path} is not a JSON object keyed by page ID")
+    return record
+
+
+def save_record(path: Path, record: dict) -> None:
+    """Write the record sorted by page ID, atomically."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # Page IDs in numeric order; json.dumps(sort_keys=True) would sort them
+    # as text, so only the fields inside each entry are sorted here
+    ordered = {key: dict(sorted(record[key].items()))
+               for key in sorted(record, key=int)}
+    text = json.dumps(ordered, indent=2, ensure_ascii=False)
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent,
+                                     prefix=path.name, delete=False) as tmp:
+        tmp.write(text + "\n")
+    os.replace(tmp.name, path)
+
+
+def record_entry(page: dict, name: str, status: str, reason: str) -> dict:
+    """One template's record: what was looked at, and what was decided."""
+    return {"name": name, "title": page["title"], "revid": page["revid"],
+            "status": status, "reason": reason}
 
 
 def without_noinclude(text: str) -> tuple:
@@ -250,52 +311,120 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Fetch templates from English Wikipedia into templates/, "
                     "under the attribution header the repository requires, "
-                    "as a starting point for adapting them.")
+                    "as a starting point for adapting them. Every template "
+                    "fetched or rejected is recorded by its Wikipedia page ID "
+                    "in data/templates.json, so it is not fetched again "
+                    "until it changes.")
     parser.add_argument(
         "names", nargs="*", metavar="NAME",
         help='Template names, with or without "Template:", for example Main '
              'or "See also".')
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument(
+        "-m", "--mark-unadaptable", action="store_true",
+        help="Record the named templates as not adaptable instead of "
+             "fetching them; needs --reason.")
+    modes.add_argument(
+        "-c", "--check-updates", action="store_true",
+        help="Report recorded templates that were edited, renamed or deleted "
+             "on Wikipedia since they were recorded. Writes nothing.")
+    parser.add_argument(
+        "-r", "--reason", metavar="TEXT",
+        help="Why the templates cannot be adapted (with --mark-unadaptable).")
     parser.add_argument(
         "-d", "--dir", type=Path,
         default=Path(__file__).resolve().parent.parent / "templates",
         help="Directory to write the .wiki files in (default: %(default)s).")
     parser.add_argument(
+        "-R", "--record", type=Path,
+        default=Path(__file__).resolve().parent.parent / "data"
+        / "templates.json",
+        help="The record of fetched and rejected templates "
+             "(default: %(default)s).")
+    parser.add_argument(
         "-f", "--force", action="store_true",
-        help="Replace a template that is already in the directory.")
+        help="Fetch even when the template is recorded at its latest "
+             "revision, and replace a file that is already in the directory.")
     parser.add_argument(
         "-n", "--dry-run", action="store_true",
-        help="Fetch and report, but write no files.")
+        help="Fetch and report, but write no files and change no record.")
     return parser
 
 
-def main() -> int:
-    """Fetch the named templates and write them; see the module docstring."""
-    parser = build_parser()
-    args = parser.parse_args()
-    if not args.names:
-        parser.print_help()
+def check_updates(record: dict) -> int:
+    """Report recorded templates that changed on Wikipedia; return 0."""
+    if not record:
+        print("The record is empty.")
         return 0
-    try:
-        names = list(dict.fromkeys(template_name(raw) for raw in args.names))
-    except ValueError as error:
-        parser.error(str(error))
-    if not args.dir.is_dir():
-        parser.error(f"{args.dir} is not a directory")
+    latest = query_pages("pageids", [int(key) for key in record], False)
+    changed = 0
+    for key in sorted(record, key=lambda k: record[k]["name"].lower()):
+        entry = record[key]
+        page = latest[int(key)]
+        label = f"{entry['name']} ({entry['status']})"
+        if page is None:
+            print(f"DELETED  {label}: page {key} no longer exists")
+            changed += 1
+            continue
+        notes = []
+        if page["revid"] != entry["revid"]:
+            notes.append(f"edited: revision {entry['revid']} -> "
+                         f"{page['revid']}")
+        if page["title"] != entry["title"]:
+            notes.append(f"renamed to {page['title']}")
+        if notes:
+            print(f"CHANGED  {label}: {'; '.join(notes)}")
+            changed += 1
+    print(f"{len(record)} recorded, {changed} changed on Wikipedia")
+    return 0
 
-    try:
-        pages = fetch(names)
-    except FetchError as error:
-        print(f"error: {error}", file=sys.stderr)
-        return 1
 
+def mark_unadaptable(names: list, reason: str, record: dict) -> int:
+    """Record templates as not adaptable; return the exit status."""
+    pages = fetch(names, content=False)
     failed = 0
     for name in names:
         page = pages[name]
-        target = args.dir / f"{name}.wiki"
         if page is None:
             print(f"MISSING  {name}: no such template on English Wikipedia")
             failed += 1
             continue
+        record[str(page["pageid"])] = record_entry(
+            page, name, "not adaptable", reason)
+        print(f"RECORDED {name} (page {page['pageid']}, revision "
+              f"{page['revid']}): not adaptable: {reason}")
+    return 1 if failed else 0
+
+
+def fetch_templates(names: list, args: argparse.Namespace,
+                    record: dict) -> int:
+    """Fetch, write and record templates; return the exit status."""
+    failed = 0
+    # Page info first, which is cheap: anything recorded at its latest
+    # revision is not downloaded again
+    info = fetch(names, content=False)
+    wanted = []
+    for name in names:
+        page = info[name]
+        if page is None:
+            print(f"MISSING  {name}: no such template on English Wikipedia")
+            failed += 1
+            continue
+        entry = record.get(str(page["pageid"]))
+        if entry and entry["revid"] == page["revid"] and not args.force:
+            print(f"KNOWN    {name}: recorded at revision {page['revid']} "
+                  f"({entry['status']}); use --force to fetch it again")
+            continue
+        wanted.append(name)
+
+    pages = fetch(wanted) if wanted else {}
+    for name in wanted:
+        page = pages[name]
+        if page is None:
+            print(f"MISSING  {name}: no such template on English Wikipedia")
+            failed += 1
+            continue
+        target = args.dir / f"{name}.wiki"
         if target.exists() and not args.force:
             print(f"SKIPPED  {name}: {target.name} exists;"
                   " use --force to replace it")
@@ -306,6 +435,9 @@ def main() -> int:
         if not args.dry_run:
             text = header(page, problems, stripped) + body + "\n"
             target.write_text(text, encoding="utf-8")
+        record[str(page["pageid"])] = record_entry(
+            page, name, "needs adapting" if problems else "fetched",
+            "; ".join(problems))
         state = "NEEDS ADAPTING" if problems else "fetched"
         print(f"{state:15}{name} (revision {page['revid']})"
               + (f": {'; '.join(problems)}" if problems else ""))
@@ -317,6 +449,46 @@ def main() -> int:
                     if missing else "")
             print(f"{'':15}calls {', '.join(calls)}{note}")
     return 1 if failed else 0
+
+
+def main() -> int:
+    """Run the chosen mode; see the module docstring."""
+    parser = build_parser()
+    args = parser.parse_args()
+    if not args.names and not args.check_updates:
+        parser.print_help()
+        return 0
+    if args.check_updates and args.names:
+        parser.error("--check-updates takes no template names")
+    if args.mark_unadaptable and not (args.reason and args.reason.strip()):
+        parser.error("--mark-unadaptable needs --reason")
+    if args.reason and not args.mark_unadaptable:
+        parser.error("--reason is only used with --mark-unadaptable")
+    try:
+        names = list(dict.fromkeys(template_name(raw) for raw in args.names))
+    except ValueError as error:
+        parser.error(str(error))
+    if not args.check_updates and not args.mark_unadaptable \
+            and not args.dir.is_dir():
+        parser.error(f"{args.dir} is not a directory")
+    try:
+        record = load_record(args.record)
+    except (ValueError, json.JSONDecodeError) as error:
+        parser.error(f"cannot read the record: {error}")
+
+    try:
+        if args.check_updates:
+            return check_updates(record)
+        if args.mark_unadaptable:
+            status = mark_unadaptable(names, args.reason.strip(), record)
+        else:
+            status = fetch_templates(names, args, record)
+    except FetchError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
+    if not args.dry_run:
+        save_record(args.record, record)
+    return status
 
 
 if __name__ == "__main__":
