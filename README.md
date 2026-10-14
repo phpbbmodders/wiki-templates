@@ -2,7 +2,7 @@
 
 Ready-made templates for the [phpBB Modders wiki extension](https://github.com/phpbbmodders/phpbb-ext-wiki), adapted from Wikipedia's and other Wikimedia wikis' for what the wiki can do, so a board can start with a useful set instead of writing every template from nothing.
 
-No templates have been added yet. The plan for this repository is in the wiki extension's [`docs/TODO/todo-wiki-templates-repo.md`](https://github.com/phpbbmodders/phpbb-ext-wiki/blob/main/docs/TODO/todo-wiki-templates-repo.md).
+The hatnotes `{{Main}}`, `{{See also}}`, `{{Further}}` and `{{About}}` are in [`templates/`](templates/) so far. The plan for this repository is in the wiki extension's [`docs/TODO/todo-wiki-templates-repo.md`](https://github.com/phpbbmodders/phpbb-ext-wiki/blob/main/docs/TODO/todo-wiki-templates-repo.md).
 
 ## Why a separate repository
 
@@ -83,9 +83,15 @@ Such templates aren't in `data/templates.json`, so `--check-updates` doesn't cov
 
 ### The record of fetched and rejected templates
 
-`data/templates.json` (created by the first fetch) records every template fetched or rejected, by its wiki and **page ID** (`enwiki:1208356`; the page ID stays the same when a page is renamed), with the revision that was looked at, its status (`fetched`, `needs adapting` or `not adaptable`) and why. Commit it with the templates, so everyone sees what was already tried.
+`data/templates.json` records every template fetched or rejected, by its wiki and **page ID** (`enwiki:1208356`; the page ID stays the same when a page is renamed), with the revision that was looked at, its status (`fetched`, `needs adapting`, `adapted` or `not adaptable`) and why. Commit it with the templates, so everyone sees what was already tried.
 
 - A template recorded at its latest revision is not downloaded again: only its page info is read, which is cheap. `--force` fetches it anyway.
+- Once a template is adapted and passes the header check, record it as such. It stays at the revision that was fetched, so `--check-updates` still reports later edits to the original:
+
+  ```bash
+  python3 tools/fetch_template.py --mark-adapted Main
+  ```
+
 - A template that can't reasonably be adapted, for example one built on a large Lua module, is recorded without writing a file:
 
   ```bash

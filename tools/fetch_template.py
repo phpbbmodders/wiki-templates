@@ -21,6 +21,8 @@ the attribution header that tools/check_headers.py requires:
   parser functions and magic words it does not have;
 * the licence notice.
 
+Once adapted and passing check_headers.py, --mark-adapted records it as such.
+
 Every template fetched, or rejected with --mark-unadaptable, is recorded in
 data/templates.json by its wiki and page ID ("enwiki:1208356"; the page ID
 stays the same when a page is renamed), with the revision looked at. A
@@ -392,6 +394,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Record the named templates as not adaptable instead of "
              "fetching them; needs --reason.")
     modes.add_argument(
+        "-a", "--mark-adapted", action="store_true",
+        help="Record the named templates as adapted, once their files in "
+             "the directory pass tools/check_headers.py. Fetches nothing.")
+    modes.add_argument(
         "-c", "--check-updates", action="store_true",
         help="Report recorded templates, from every wiki, that were edited, "
              "renamed or deleted since they were recorded. Writes nothing.")
@@ -477,6 +483,37 @@ def mark_unadaptable(site_id: str, names: list, reason: str,
     return 1 if failed else 0
 
 
+def mark_adapted(names: list, args: argparse.Namespace, record: dict) -> int:
+    """
+    Record templates as adapted, once their files pass the header check;
+    return the exit status. The revision recorded stays the one that was
+    fetched, so --check-updates still reports later edits to the original.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import check_headers
+    by_name = {(key.split(":")[0], entry["name"]): key
+               for key, entry in record.items()}
+    failed = 0
+    for name in names:
+        key = by_name.get((args.site, name))
+        path = args.dir / f"{name}.wiki"
+        if key is None:
+            print(f"UNKNOWN  {name}: not in the record for {args.site}; "
+                  "fetch it first")
+            failed += 1
+        elif not path.is_file():
+            print(f"MISSING  {name}: no {path.name} in {args.dir}")
+            failed += 1
+        elif check_headers.problems(path):
+            print(f"NOT YET  {name}: "
+                  + "; ".join(check_headers.problems(path)))
+            failed += 1
+        else:
+            record[key].update(status="adapted", reason="")
+            print(f"ADAPTED  {name}")
+    return 1 if failed else 0
+
+
 def fetch_templates(names: list, args: argparse.Namespace,
                     record: dict) -> int:
     """Fetch, write and record templates; return the exit status."""
@@ -543,6 +580,8 @@ def main() -> int:
         return 0
     if args.check_updates and args.names:
         parser.error("--check-updates takes no template names")
+    if args.mark_adapted and not args.dir.is_dir():
+        parser.error(f"{args.dir} is not a directory")
     if args.mark_unadaptable and not (args.reason and args.reason.strip()):
         parser.error("--mark-unadaptable needs --reason")
     if args.reason and not args.mark_unadaptable:
@@ -562,6 +601,11 @@ def main() -> int:
     try:
         if args.check_updates:
             return check_updates(record)
+        if args.mark_adapted:
+            status = mark_adapted(names, args, record)
+            if not args.dry_run:
+                save_record(args.record, record)
+            return status
         # Only a wiki whose licence the repository can take templates under
         check_licence(SITES[args.site])
         if args.mark_unadaptable:
