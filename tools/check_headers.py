@@ -5,9 +5,14 @@ Check that every template carries the attribution header CC BY-SA 4.0 needs.
 Each templates/*.wiki file must start with a <noinclude> block holding:
 
 * "Source:" followed by the Template:... page the template was adapted from,
-  on one of the wikis tools/fetch_template.py fetches from (English
-  Wikipedia, MediaWiki.org, Meta-Wiki, Wikimedia Commons);
+  either on one of the wikis tools/fetch_template.py fetches from (English
+  Wikipedia, MediaWiki.org, Meta-Wiki, Wikimedia Commons), or on a Fandom
+  wiki (*.fandom.com), copied by hand, since Fandom's terms forbid automated
+  access;
 * "History:" followed by that page's history URL, on the same wiki;
+* for a Fandom template, "Original licence:" naming the wiki's CC BY-SA 3.0
+  or 4.0 licence with its link (Fandom wikis default to 3.0, and some use
+  NonCommercial or NoDerivs licences, which cannot be taken);
 * "Changes:" saying what was removed or changed (not "TODO");
 * the licence notice, a link to
   https://creativecommons.org/licenses/by-sa/4.0/;
@@ -27,19 +32,63 @@ import sys
 from pathlib import Path
 
 LICENCE_URL = "https://creativecommons.org/licenses/by-sa/4.0/"
-# The wikis templates are taken from (tools/fetch_template.py's SITES)
-HOSTS = (r"(?P<host>en\.wikipedia\.org|www\.mediawiki\.org"
-         r"|meta\.wikimedia\.org|commons\.wikimedia\.org)")
+# Wikimedia wikis, which tools/fetch_template.py fetches from (its SITES)
+WIKIMEDIA = r"(?P<host>en\.wikipedia\.org|www\.mediawiki\.org" \
+            r"|meta\.wikimedia\.org|commons\.wikimedia\.org)"
+# Fandom wikis, whose templates are only ever copied by hand: Fandom's terms
+# forbid automated access. An optional language path, as in /de/wiki/.
+FANDOM = r"(?P<host>[a-z0-9-]+\.fandom\.com(?:/[a-z]{2,3}(?:-[a-z]+)?)?)"
+TITLE = r"(?P<title>Template:\S+?)"
+SOURCES = {
+    "wikimedia": (
+        re.compile(r"^Source: https://" + WIKIMEDIA + r"/wiki/" + TITLE + "$",
+                   re.M),
+        re.compile(r"^History: https://" + WIKIMEDIA + r"/w/index\.php\?"
+                   r"title=" + TITLE + r"&action=history$", re.M)),
+    "fandom": (
+        re.compile(r"^Source: https://" + FANDOM + r"/wiki/" + TITLE + "$",
+                   re.M),
+        re.compile(r"^History: https://" + FANDOM + r"/wiki/" + TITLE
+                   + r"\?action=history$", re.M)),
+}
+# A Fandom wiki's own licence: CC BY-SA 3.0 by default, which lets an
+# adaptation be shared under a later BY-SA version, so under 4.0 here
+ORIGINAL_LICENCE = re.compile(
+    r"^Original licence: CC BY-SA (?P<version>3\.0|4\.0), "
+    r"https://creativecommons\.org/licenses/by-sa/(?P=version)/$", re.M)
 REQUIRED = {
-    "source URL": re.compile(
-        r"^Source: https://" + HOSTS + r"/wiki/Template:\S+", re.M),
-    "history URL": re.compile(
-        r"^History: https://" + HOSTS + r"/w/index\.php\?title="
-        r"Template:\S+&action=history", re.M),
     "list of changes": re.compile(r"^Changes: \S", re.M),
     "licence notice": re.compile(re.escape(LICENCE_URL)),
 }
 HEADER = re.compile(r"\A<noinclude>(.*?)</noinclude>", re.S)
+
+
+def source_problems(text: str) -> list:
+    """What is wrong with the header's Source and History lines."""
+    for kind, (source_line, history_line) in SOURCES.items():
+        source = source_line.search(text)
+        if source:
+            break
+    else:
+        found = ["header has no source URL"]
+        if not any(history.search(text) for _, history in SOURCES.values()):
+            found.append("header has no history URL")
+        return found
+
+    history = history_line.search(text)
+    if not history:
+        if any(other.search(text) for _, other in SOURCES.values()):
+            return ["the source and its history are on different wikis"]
+        return ["header has no history URL"]
+    found = []
+    if history["host"] != source["host"]:
+        found.append("the source and its history are on different wikis")
+    elif history["title"] != source["title"]:
+        found.append("the history link is for another page")
+    if kind == "fandom" and not ORIGINAL_LICENCE.search(text):
+        found.append("a Fandom template needs an Original licence line "
+                     "naming CC BY-SA 3.0 or 4.0")
+    return found
 
 
 def problems(path: Path) -> list:
@@ -48,12 +97,9 @@ def problems(path: Path) -> list:
     header = HEADER.match(text)
     if not header:
         return ["does not start with a <noinclude> header"]
-    found = [f"header has no {name}" for name, pattern in REQUIRED.items()
-             if not pattern.search(header.group(1))]
-    source = REQUIRED["source URL"].search(header.group(1))
-    history = REQUIRED["history URL"].search(header.group(1))
-    if source and history and source["host"] != history["host"]:
-        found.append("the source and its history are on different wikis")
+    found = source_problems(header.group(1))
+    found += [f"header has no {name}" for name, pattern in REQUIRED.items()
+              if not pattern.search(header.group(1))]
     if re.search(r"^Changes: TODO\b", header.group(1), re.M):
         found.append("the list of changes still says TODO")
     if re.search(r"^Needs adapting:", header.group(1), re.M):
