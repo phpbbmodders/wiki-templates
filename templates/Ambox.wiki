@@ -3,9 +3,9 @@ Source: https://en.wikipedia.org/wiki/Template:Ambox
 History: https://en.wikipedia.org/w/index.php?title=Template:Ambox&action=history
 Revision: https://en.wikipedia.org/w/index.php?title=Template:Ambox&oldid=1377691028 (09/30/2026 4:25 PM UTC)
 Adapted by phpBB Modders.
-Changes: rewritten in plain wiki text without Lua (Module:Message box): a one-cell table with the text, or the issue and the fix, and the date in brackets; no image, type colours, small, talk or category options, since the wiki allows no images in templates, no styles and no <div>; &nbsp; where {{#if:}} would trim a space; removed the source's documentation and categories.
+Changes: rewritten in plain wiki text without Lua (Module:Message box): a one-cell table with the text, or the issue and the fix, and the date in brackets; no image, type colours, small, talk or category options, since the wiki allows no images in templates, no styles and no <div>; &#32; where {{#if:}} would trim a space; removed the source's documentation and categories.
 Example: {{Ambox|issue=This article needs work.|fix=Please help.}}
 Example: {{Ambox|text=Plain notice text.}}
 Example: {{Ambox|issue=Needs work.|date=October 2026}}
 Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
-</noinclude><table><tr><td>{{#if:{{{text|}}}|{{{text}}}|{{{issue|}}}{{#if:{{{fix|}}}|&nbsp;{{{fix}}}}}}}{{#if:{{{date|}}}|&nbsp;[i]({{{date}}})[/i]}}</td></tr></table>
+</noinclude><table><tr><td>{{#if:{{{text|}}}|{{{text}}}|{{{issue|}}}{{#if:{{{fix|}}}|&#32;{{{fix}}}}}}}{{#if:{{{date|}}}|&#32;[i]({{{date}}})[/i]}}</td></tr></table>

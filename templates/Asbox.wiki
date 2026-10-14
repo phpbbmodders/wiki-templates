@@ -9,4 +9,4 @@ Expect: This software article is a stub. You can help {{SITENAME}} by adding mis
 Example: {{Asbox|name=Template:X-stub}}
 Expect: This article is a stub. You can help {{SITENAME}} by adding missing information.
 Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
-</noinclude><table><tr><td>This {{#if:{{{subject|}}}|{{{subject}}}&nbsp;}}{{{article|article}}}{{#if:{{{qualifier|}}}|&nbsp;{{{qualifier}}}}} is a stub. You can help {{SITENAME}} by adding missing information.</td></tr></table>
+</noinclude><table><tr><td>This {{#if:{{{subject|}}}|{{{subject}}}&#32;}}{{{article|article}}}{{#if:{{{qualifier|}}}|&#32;{{{qualifier}}}}} is a stub. You can help {{SITENAME}} by adding missing information.</td></tr></table>

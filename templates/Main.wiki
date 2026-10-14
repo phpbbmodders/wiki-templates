@@ -3,10 +3,10 @@ Source: https://en.wikipedia.org/wiki/Template:Main
 History: https://en.wikipedia.org/w/index.php?title=Template:Main&action=history
 Revision: https://en.wikipedia.org/w/index.php?title=Template:Main&oldid=1363280785 (07/09/2026 5:15 AM UTC)
 Adapted by phpBB Modders.
-Changes: rewritten in plain wiki text without Lua (Module:Labelled list hatnote): up to five articles, with their l1 to l5 link texts, listed as A, A and B, or A, B, and C; no selfref or category options; shown in italics instead of the hatnote style, since the wiki allows no <div>; &nbsp; before "and", since {{#if:}} trims a plain space there; removed the source's documentation and categories.
+Changes: rewritten in plain wiki text without Lua (Module:Labelled list hatnote): up to five articles, with their l1 to l5 link texts, listed as A, A and B, or A, B, and C; no selfref or category options; shown in italics instead of the hatnote style, since the wiki allows no <div>; &#32; before "and", since {{#if:}} trims a plain space there; removed the source's documentation and categories.
 Example: {{Main|History of phpBB}}
 Example: {{Main|Installation|Upgrading}}
 Example: {{Main|A|B|C}}
 Example: {{Main|Installation|l1=Installing phpBB}}
 Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
-</noinclude>[i]Main {{#if:{{{2|}}}|articles|article}}: [[{{{1}}}|{{{l1|{{{1}}}}}}]]{{#if:{{{2|}}}|{{#if:{{{3|}}}|,|&nbsp;and}} [[{{{2}}}|{{{l2|{{{2}}}}}}]]}}{{#if:{{{3|}}}|,{{#if:{{{4|}}}||&nbsp;and}} [[{{{3}}}|{{{l3|{{{3}}}}}}]]}}{{#if:{{{4|}}}|,{{#if:{{{5|}}}||&nbsp;and}} [[{{{4}}}|{{{l4|{{{4}}}}}}]]}}{{#if:{{{5|}}}|,&nbsp;and [[{{{5}}}|{{{l5|{{{5}}}}}}]]}}[/i]
+</noinclude>[i]Main {{#if:{{{2|}}}|articles|article}}: [[{{{1}}}|{{{l1|{{{1}}}}}}]]{{#if:{{{2|}}}|{{#if:{{{3|}}}|,|&#32;and}} [[{{{2}}}|{{{l2|{{{2}}}}}}]]}}{{#if:{{{3|}}}|,{{#if:{{{4|}}}||&#32;and}} [[{{{3}}}|{{{l3|{{{3}}}}}}]]}}{{#if:{{{4|}}}|,{{#if:{{{5|}}}||&#32;and}} [[{{{4}}}|{{{l4|{{{4}}}}}}]]}}{{#if:{{{5|}}}|,&#32;and [[{{{5}}}|{{{l5|{{{5}}}}}}]]}}[/i]
