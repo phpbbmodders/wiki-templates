@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Fetch templates from English Wikipedia as a starting point for this repository.
+Fetch templates from a Wikimedia wiki as a starting point for this repository.
+
+--site picks the wiki: English Wikipedia (the default), MediaWiki.org,
+Meta-Wiki or Wikimedia Commons, all CC BY-SA 4.0. The wiki's licence is read
+from its API first, and nothing is fetched or recorded unless it is CC BY-SA.
 
 For each template name the current wikitext is read through the MediaWiki API
 (one request for up to 50 names, with an identifying User-Agent, a timeout and
@@ -8,21 +12,22 @@ retries on temporary errors only) and written to templates/<Name>.wiki under
 the attribution header that tools/check_headers.py requires:
 
 * Source, History and the exact Revision that was copied, from the API;
-* "Changes: TODO", for the person adapting it to fill in, noting that
-  Wikipedia's own <noinclude> part (its documentation call and categories)
-  was removed, since the header takes its place;
+* "Changes: TODO", for the person adapting it to fill in, noting that the
+  source's page-only part (its documentation call and categories: what is
+  outside <onlyinclude>, or inside <noinclude>) was removed, since the header
+  takes its place;
 * "Needs adapting:", when the text uses what the phpBB Modders wiki cannot run:
-  Lua ({{#invoke:}}), TemplateStyles, or parser functions and magic words it
-  does not have;
+  Lua ({{#invoke:}}), TemplateStyles, the Translate extension's markup, or
+  parser functions and magic words it does not have;
 * the licence notice.
 
 Every template fetched, or rejected with --mark-unadaptable, is recorded in
-data/templates.json by its Wikipedia page ID, which stays the same when a
-page is renamed, with the revision looked at. A template recorded at its
-latest revision is not downloaded again; only its page info is read, which
-is cheap. --check-updates reports recorded templates that were edited,
-renamed or deleted on Wikipedia since, so rejected ones can be looked at
-again and adapted ones can pick up fixes.
+data/templates.json by its wiki and page ID ("enwiki:1208356"; the page ID
+stays the same when a page is renamed), with the revision looked at. A
+template recorded at its latest revision is not downloaded again; only its
+page info is read, which is cheap. --check-updates reports recorded templates
+that were edited, renamed or deleted since, on every wiki, so rejected ones
+can be looked at again and adapted ones can pick up fixes.
 
 check_headers.py fails while "Changes: TODO" or "Needs adapting:" is left, so a
 fetched template cannot be merged before a person has adapted it.
@@ -46,8 +51,23 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-API_URL = "https://en.wikipedia.org/w/api.php"
-WIKI_URL = "https://en.wikipedia.org"
+# The wikis templates can be fetched from: all Wikimedia wikis, under CC BY-SA
+# 4.0, with the same API and the same rules for automated access. Each wiki's
+# licence is still read from its API before fetching (see check_licence()).
+SITES = {
+    "enwiki": {"base": "https://en.wikipedia.org",
+               "label": "English Wikipedia",
+               "api": "https://en.wikipedia.org/w/api.php"},
+    "mediawiki": {"base": "https://www.mediawiki.org",
+                  "label": "MediaWiki.org",
+                  "api": "https://www.mediawiki.org/w/api.php"},
+    "meta": {"base": "https://meta.wikimedia.org", "label": "Meta-Wiki",
+             "api": "https://meta.wikimedia.org/w/api.php"},
+    "commons": {"base": "https://commons.wikimedia.org",
+                "label": "Wikimedia Commons",
+                "api": "https://commons.wikimedia.org/w/api.php"},
+}
+DEFAULT_SITE = "enwiki"
 USER_AGENT = ("phpbbmodders-wiki-templates/1.0 "
               "(https://github.com/phpbbmodders/wiki-templates; "
               "board@phpbbmodders.com)")
@@ -106,18 +126,19 @@ def template_name(raw: str) -> str:
     return name[0].upper() + name[1:]
 
 
-def page_url(title: str, **query: str) -> str:
-    """The address of a Wikipedia page, with an optional query string."""
+def page_url(site: dict, title: str, **query: str) -> str:
+    """The address of a page on a wiki, with an optional query string."""
     path = urllib.parse.quote(title.replace(" ", "_"), safe=":()_,'!")
     if not query:
-        return f"{WIKI_URL}/wiki/{path}"
+        return f"{site['base']}/wiki/{path}"
     params = "&".join(f"{key}={value}" for key, value in query.items())
-    return f"{WIKI_URL}/w/index.php?title={path}&{params}"
+    return f"{site['base']}/w/index.php?title={path}&{params}"
 
 
-def api_get(params: dict) -> dict:
-    """Call the API, retrying only on 429, 5xx and dropped connections."""
-    url = API_URL + "?" + urllib.parse.urlencode(params)
+def api_get(site: dict, params: dict) -> dict:
+    """Call a wiki's API, retrying only on 429, 5xx and dropped connections."""
+    api_url = site["api"]
+    url = api_url + "?" + urllib.parse.urlencode(params)
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     delay = 5
     for attempt in range(1, MAX_ATTEMPTS + 1):
@@ -129,20 +150,36 @@ def api_get(params: dict) -> dict:
             transient = error.code == 429 or error.code >= 500
             if not transient or attempt == MAX_ATTEMPTS:
                 raise FetchError(
-                    f"HTTP {error.code} from {API_URL}") from None
+                    f"HTTP {error.code} from {api_url}") from None
             retry_after = error.headers.get("Retry-After", "")
             wait = (min(int(retry_after), 300) if retry_after.isdigit()
                     else delay)
         except (urllib.error.URLError, TimeoutError) as error:
             if attempt == MAX_ATTEMPTS:
-                raise FetchError(f"{API_URL}: {error}") from None
+                raise FetchError(f"{api_url}: {error}") from None
             wait = delay
         time.sleep(wait)
         delay *= 2
-    raise FetchError(f"{API_URL}: retries exhausted")
+    raise FetchError(f"{api_url}: retries exhausted")
 
 
-def query_pages(key: str, values: list, content: bool) -> dict:
+def check_licence(site: dict) -> str:
+    """
+    The wiki's licence as its API reports it. Raises FetchError unless it is
+    a CC BY-SA licence, which this repository can take templates under.
+    """
+    data = api_get(site, {"action": "query", "meta": "siteinfo",
+                          "siprop": "rightsinfo", "format": "json",
+                          "formatversion": "2"})
+    rights = data.get("query", {}).get("rightsinfo", {})
+    text = f"{rights.get('text', '')} {rights.get('url', '')}".strip()
+    if not re.search(r"by-sa|attribution-share ?alike", text, re.IGNORECASE):
+        raise FetchError(f"{site['label']} reports its licence as "
+                         f"{text or 'nothing'!r}, not CC BY-SA")
+    return text
+
+
+def query_pages(site: dict, key: str, values: list, content: bool) -> dict:
     """
     Look pages up by title ("titles") or page ID ("pageids"), 50 at a time.
 
@@ -161,7 +198,7 @@ def query_pages(key: str, values: list, content: bool) -> dict:
                           rvslots="main")
         else:
             params.update(prop="info")
-        query = api_get(params).get("query", {})
+        query = api_get(site, params).get("query", {})
         # Where each requested title ended up after normalising and redirects
         moved = {}
         for step in query.get("normalized", []) + query.get("redirects", []):
@@ -193,10 +230,22 @@ def query_pages(key: str, values: list, content: bool) -> dict:
     return found
 
 
-def fetch(names: list, content: bool = True) -> dict:
+def fetch(site: dict, names: list, content: bool = True) -> dict:
     """Look templates up by name; see query_pages()."""
-    pages = query_pages("titles", [PREFIX + name for name in names], content)
+    titles = [PREFIX + name for name in names]
+    pages = query_pages(site, "titles", titles, content)
     return {name: pages[PREFIX + name] for name in names}
+
+
+def record_key(site_id: str, pageid) -> str:
+    """A record key: page IDs are unique only within one wiki."""
+    return f"{site_id}:{pageid}"
+
+
+def split_key(key: str) -> tuple:
+    """The site and page ID of a record key."""
+    site_id, _, pageid = key.rpartition(":")
+    return site_id, int(pageid)
 
 
 def load_record(path: Path) -> dict:
@@ -210,16 +259,18 @@ def load_record(path: Path) -> dict:
         record = json.load(handle)
     if not isinstance(record, dict):
         raise ValueError(f"{path} is not a JSON object keyed by page ID")
-    return record
+    # Keys without a site are from before other wikis were supported
+    return {(key if ":" in key else record_key(DEFAULT_SITE, key)): entry
+            for key, entry in record.items()}
 
 
 def save_record(path: Path, record: dict) -> None:
     """Write the record sorted by page ID, atomically."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    # Page IDs in numeric order; json.dumps(sort_keys=True) would sort them
-    # as text, so only the fields inside each entry are sorted here
+    # By site, then page ID in numeric order; json.dumps(sort_keys=True)
+    # would sort the IDs as text, so only each entry's fields are sorted here
     ordered = {key: dict(sorted(record[key].items()))
-               for key in sorted(record, key=int)}
+               for key in sorted(record, key=split_key)}
     text = json.dumps(ordered, indent=2, ensure_ascii=False)
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent,
                                      prefix=path.name, delete=False) as tmp:
@@ -235,10 +286,16 @@ def record_entry(page: dict, name: str, status: str, reason: str) -> dict:
 
 def without_noinclude(text: str) -> tuple:
     """
-    Remove Wikipedia's own <noinclude> parts (its {{Documentation}} call and
-    categories), which this repository's header replaces. Returns the text
-    and whether anything was removed.
+    Remove the source's page-only parts (its documentation call and
+    categories), which this repository's header replaces: everything outside
+    <onlyinclude> when the template uses it (the phpBB Modders wiki does not
+    know that tag), otherwise the <noinclude> parts. Returns the text and
+    whether anything was removed.
     """
+    only = re.findall(r"<onlyinclude>(.*?)</onlyinclude>", text,
+                      flags=re.IGNORECASE | re.DOTALL)
+    if only:
+        return "".join(only).strip("\n"), True
     stripped = re.sub(r"<noinclude>.*?</noinclude>", "", text,
                       flags=re.IGNORECASE | re.DOTALL)
     return stripped.strip("\n"), stripped != text
@@ -251,6 +308,9 @@ def needs(text: str) -> list:
         problems.append("Lua ({{#invoke:}})")
     if re.search(r"<templatestyles\b", text, re.IGNORECASE):
         problems.append("TemplateStyles")
+    if re.search(r"<(?:translate|languages)\b|<!--T:\d+-->", text,
+                 re.IGNORECASE):
+        problems.append("Translate markup (<translate>, <languages/>)")
     unsupported = set()
     for match in re.finditer(r"\{\{\s*(#?[A-Za-z][\w ]*?)\s*:", text):
         word = match.group(1).strip().lower()
@@ -287,17 +347,17 @@ def human_time(timestamp: str) -> str:
     return moment.strftime("%m/%d/%Y %I:%M %p UTC").replace(" 0", " ", 1)
 
 
-def header(page: dict, problems: list, stripped: bool) -> str:
+def header(site: dict, page: dict, problems: list, stripped: bool) -> str:
     """The attribution header that tools/check_headers.py requires."""
     lines = [
         "<noinclude>",
-        "Source: " + page_url(page["title"]),
-        "History: " + page_url(page["title"], action="history"),
-        "Revision: " + page_url(page["title"], oldid=str(page["revid"]))
+        "Source: " + page_url(site, page["title"]),
+        "History: " + page_url(site, page["title"], action="history"),
+        "Revision: " + page_url(site, page["title"], oldid=str(page["revid"]))
         + f" ({human_time(page['timestamp'])})",
         "Adapted by phpBB Modders.",
-        "Changes: TODO" + (". Done by fetch_template.py: removed Wikipedia's"
-                           " <noinclude> part (its documentation and"
+        "Changes: TODO" + (". Done by fetch_template.py: removed the source's"
+                           " page-only part (its documentation and"
                            " categories)." if stripped else ""),
     ]
     if problems:
@@ -309,16 +369,23 @@ def header(page: dict, problems: list, stripped: bool) -> str:
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
     parser = argparse.ArgumentParser(
-        description="Fetch templates from English Wikipedia into templates/, "
+        description="Fetch templates from a Wikimedia wiki (English Wikipedia "
+                    "by default) into templates/, "
                     "under the attribution header the repository requires, "
                     "as a starting point for adapting them. Every template "
-                    "fetched or rejected is recorded by its Wikipedia page ID "
+                    "fetched or rejected is recorded by its wiki and page ID "
                     "in data/templates.json, so it is not fetched again "
                     "until it changes.")
     parser.add_argument(
         "names", nargs="*", metavar="NAME",
         help='Template names, with or without "Template:", for example Main '
              'or "See also".')
+    parser.add_argument(
+        "-s", "--site", choices=sorted(SITES), default=DEFAULT_SITE,
+        help="The wiki to fetch from or mark templates of: "
+             + ", ".join(f"{key} ({value['label']})"
+                         for key, value in sorted(SITES.items()))
+             + " (default: %(default)s).")
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument(
         "-m", "--mark-unadaptable", action="store_true",
@@ -326,8 +393,8 @@ def build_parser() -> argparse.ArgumentParser:
              "fetching them; needs --reason.")
     modes.add_argument(
         "-c", "--check-updates", action="store_true",
-        help="Report recorded templates that were edited, renamed or deleted "
-             "on Wikipedia since they were recorded. Writes nothing.")
+        help="Report recorded templates, from every wiki, that were edited, "
+             "renamed or deleted since they were recorded. Writes nothing.")
     parser.add_argument(
         "-r", "--reason", metavar="TEXT",
         help="Why the templates cannot be adapted (with --mark-unadaptable).")
@@ -352,18 +419,30 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def check_updates(record: dict) -> int:
-    """Report recorded templates that changed on Wikipedia; return 0."""
+    """Report recorded templates that changed on their wiki; return 0."""
     if not record:
         print("The record is empty.")
         return 0
-    latest = query_pages("pageids", [int(key) for key in record], False)
+    by_site = {}
+    for key in record:
+        site_id, pageid = split_key(key)
+        by_site.setdefault(site_id, []).append(pageid)
+    latest = {}
+    for site_id, pageids in by_site.items():
+        if site_id not in SITES:
+            raise FetchError(f"the record names an unknown wiki: {site_id}")
+        for pageid, page in query_pages(SITES[site_id], "pageids", pageids,
+                                        False).items():
+            latest[record_key(site_id, pageid)] = page
     changed = 0
-    for key in sorted(record, key=lambda k: record[k]["name"].lower()):
+    for key in sorted(record, key=lambda k: (record[k]["name"].lower(), k)):
         entry = record[key]
-        page = latest[int(key)]
-        label = f"{entry['name']} ({entry['status']})"
+        page = latest[key]
+        site_id, pageid = split_key(key)
+        where = "" if site_id == DEFAULT_SITE else f", {site_id}"
+        label = f"{entry['name']} ({entry['status']}{where})"
         if page is None:
-            print(f"DELETED  {label}: page {key} no longer exists")
+            print(f"DELETED  {label}: page {pageid} no longer exists")
             changed += 1
             continue
         notes = []
@@ -375,21 +454,23 @@ def check_updates(record: dict) -> int:
         if notes:
             print(f"CHANGED  {label}: {'; '.join(notes)}")
             changed += 1
-    print(f"{len(record)} recorded, {changed} changed on Wikipedia")
+    print(f"{len(record)} recorded, {changed} changed since")
     return 0
 
 
-def mark_unadaptable(names: list, reason: str, record: dict) -> int:
+def mark_unadaptable(site_id: str, names: list, reason: str,
+                     record: dict) -> int:
     """Record templates as not adaptable; return the exit status."""
-    pages = fetch(names, content=False)
+    site = SITES[site_id]
+    pages = fetch(site, names, content=False)
     failed = 0
     for name in names:
         page = pages[name]
         if page is None:
-            print(f"MISSING  {name}: no such template on English Wikipedia")
+            print(f"MISSING  {name}: no such template on {site['label']}")
             failed += 1
             continue
-        record[str(page["pageid"])] = record_entry(
+        record[record_key(site_id, page["pageid"])] = record_entry(
             page, name, "not adaptable", reason)
         print(f"RECORDED {name} (page {page['pageid']}, revision "
               f"{page['revid']}): not adaptable: {reason}")
@@ -399,29 +480,31 @@ def mark_unadaptable(names: list, reason: str, record: dict) -> int:
 def fetch_templates(names: list, args: argparse.Namespace,
                     record: dict) -> int:
     """Fetch, write and record templates; return the exit status."""
+    site_id = args.site
+    site = SITES[site_id]
     failed = 0
     # Page info first, which is cheap: anything recorded at its latest
     # revision is not downloaded again
-    info = fetch(names, content=False)
+    info = fetch(site, names, content=False)
     wanted = []
     for name in names:
         page = info[name]
         if page is None:
-            print(f"MISSING  {name}: no such template on English Wikipedia")
+            print(f"MISSING  {name}: no such template on {site['label']}")
             failed += 1
             continue
-        entry = record.get(str(page["pageid"]))
+        entry = record.get(record_key(site_id, page["pageid"]))
         if entry and entry["revid"] == page["revid"] and not args.force:
             print(f"KNOWN    {name}: recorded at revision {page['revid']} "
                   f"({entry['status']}); use --force to fetch it again")
             continue
         wanted.append(name)
 
-    pages = fetch(wanted) if wanted else {}
+    pages = fetch(site, wanted) if wanted else {}
     for name in wanted:
         page = pages[name]
         if page is None:
-            print(f"MISSING  {name}: no such template on English Wikipedia")
+            print(f"MISSING  {name}: no such template on {site['label']}")
             failed += 1
             continue
         target = args.dir / f"{name}.wiki"
@@ -433,9 +516,9 @@ def fetch_templates(names: list, args: argparse.Namespace,
         body, stripped = without_noinclude(page["text"])
         problems = needs(body)
         if not args.dry_run:
-            text = header(page, problems, stripped) + body + "\n"
+            text = header(site, page, problems, stripped) + body + "\n"
             target.write_text(text, encoding="utf-8")
-        record[str(page["pageid"])] = record_entry(
+        record[record_key(site_id, page["pageid"])] = record_entry(
             page, name, "needs adapting" if problems else "fetched",
             "; ".join(problems))
         state = "NEEDS ADAPTING" if problems else "fetched"
@@ -479,8 +562,11 @@ def main() -> int:
     try:
         if args.check_updates:
             return check_updates(record)
+        # Only a wiki whose licence the repository can take templates under
+        check_licence(SITES[args.site])
         if args.mark_unadaptable:
-            status = mark_unadaptable(names, args.reason.strip(), record)
+            status = mark_unadaptable(args.site, names, args.reason.strip(),
+                                      record)
         else:
             status = fetch_templates(names, args, record)
     except FetchError as error:

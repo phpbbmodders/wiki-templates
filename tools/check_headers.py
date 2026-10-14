@@ -4,9 +4,10 @@ Check that every template carries the attribution header CC BY-SA 4.0 needs.
 
 Each templates/*.wiki file must start with a <noinclude> block holding:
 
-* "Source:" followed by the https://en.wikipedia.org/wiki/Template:... page
-  the template was adapted from;
-* "History:" followed by that page's history URL;
+* "Source:" followed by the Template:... page the template was adapted from,
+  on one of the wikis tools/fetch_template.py fetches from (English
+  Wikipedia, MediaWiki.org, Meta-Wiki, Wikimedia Commons);
+* "History:" followed by that page's history URL, on the same wiki;
 * "Changes:" saying what was removed or changed (not "TODO");
 * the licence notice, a link to
   https://creativecommons.org/licenses/by-sa/4.0/;
@@ -26,11 +27,14 @@ import sys
 from pathlib import Path
 
 LICENCE_URL = "https://creativecommons.org/licenses/by-sa/4.0/"
+# The wikis templates are taken from (tools/fetch_template.py's SITES)
+HOSTS = (r"(?P<host>en\.wikipedia\.org|www\.mediawiki\.org"
+         r"|meta\.wikimedia\.org|commons\.wikimedia\.org)")
 REQUIRED = {
     "source URL": re.compile(
-        r"^Source: https://en\.wikipedia\.org/wiki/Template:\S+", re.M),
+        r"^Source: https://" + HOSTS + r"/wiki/Template:\S+", re.M),
     "history URL": re.compile(
-        r"^History: https://en\.wikipedia\.org/w/index\.php\?title="
+        r"^History: https://" + HOSTS + r"/w/index\.php\?title="
         r"Template:\S+&action=history", re.M),
     "list of changes": re.compile(r"^Changes: \S", re.M),
     "licence notice": re.compile(re.escape(LICENCE_URL)),
@@ -46,6 +50,10 @@ def problems(path: Path) -> list:
         return ["does not start with a <noinclude> header"]
     found = [f"header has no {name}" for name, pattern in REQUIRED.items()
              if not pattern.search(header.group(1))]
+    source = REQUIRED["source URL"].search(header.group(1))
+    history = REQUIRED["history URL"].search(header.group(1))
+    if source and history and source["host"] != history["host"]:
+        found.append("the source and its history are on different wikis")
     if re.search(r"^Changes: TODO\b", header.group(1), re.M):
         found.append("the list of changes still says TODO")
     if re.search(r"^Needs adapting:", header.group(1), re.M):
