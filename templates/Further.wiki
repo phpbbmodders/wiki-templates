@@ -3,7 +3,7 @@ Source: https://en.wikipedia.org/wiki/Template:Further
 History: https://en.wikipedia.org/w/index.php?title=Template:Further&action=history
 Revision: https://en.wikipedia.org/w/index.php?title=Template:Further&oldid=1337132284 (02/07/2026 5:55 PM UTC)
 Adapted by phpBB Modders.
-Changes: rewritten in plain wiki text without Lua (Module:Labelled list hatnote): up to five articles, with their l1 to l5 link texts, listed as A, A and B, or A, B, and C; no topic or selfref options; shown in italics instead of the hatnote style, since the wiki allows no <div>; &#32; before "and", since {{#if:}} trims a plain space there; removed the source's documentation and categories.
+Changes: rewritten in plain wiki text without Lua (Module:Labelled list hatnote): up to five articles, with their l1 to l5 link texts, listed as A, A and B, or A, B, and C; no topic or selfref options; shown in italics instead of the hatnote style, since the wiki allows no <div>; &#32; before "and", since #if trims a plain space there; removed the source's documentation and categories.
 Example: {{Further|Styles}}
 Example: {{Further|Styles|Templates}}
 Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/

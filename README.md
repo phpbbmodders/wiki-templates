@@ -2,7 +2,7 @@
 
 Ready-made templates for the [phpBB Modders wiki extension](https://github.com/phpbbmodders/phpbb-ext-wiki), adapted from Wikipedia's and other Wikimedia wikis' for what the wiki can do, so a board can start with a useful set instead of writing every template from nothing.
 
-The hatnotes `{{Main}}`, `{{See also}}`, `{{Further}}` and `{{About}}` are in [`templates/`](templates/) so far. The plan for this repository is in the wiki extension's [`docs/TODO/todo-wiki-templates-repo.md`](https://github.com/phpbbmodders/phpbb-ext-wiki/blob/main/docs/TODO/todo-wiki-templates-repo.md).
+So far [`templates/`](templates/) holds the hatnotes `{{Main}}`, `{{See also}}`, `{{Further}}` and `{{About}}`; the message boxes `{{Ambox}}`, `{{Update}}`, `{{Unreferenced}}`, `{{More citations needed}}` and `{{Under construction}}`; the stub boxes `{{Asbox}}` and `{{Stub}}`; and `{{Nowrap}}`. The plan for this repository is in the wiki extension's [`docs/TODO/todo-wiki-templates-repo.md`](https://github.com/phpbbmodders/phpbb-ext-wiki/blob/main/docs/TODO/todo-wiki-templates-repo.md).
 
 ## Why a separate repository
 
@@ -126,6 +126,8 @@ Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
 ```
 
 The header meets what Wikipedia asks of a reuser: it links the page copied and its history (which lists the authors), says the copy was changed, and states the licence. It sits inside `<noinclude>`, so it shows on the template's own page on the board but not in the articles that use it.
+
+Since the header is the documentation on the template's page, a template call written in it is run there. Only `Example:` and `Expect:` lines may hold `{{` or `}}`; write a function's name without braces anywhere else, such as "#if".
 
 The [Check](.github/workflows/check.yml) workflow runs [`tools/check_headers.py`](tools/check_headers.py) on every push and pull request. It fails when a template is missing any of these lines, still says `Changes: TODO`, or still has a `Needs adapting:` line:
 
