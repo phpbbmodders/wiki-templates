@@ -1,0 +1,11 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Blockquote
+History: https://en.wikipedia.org/w/index.php?title=Template:Blockquote&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Blockquote&oldid=1317335651 (10/17/2025 4:04 PM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten with phpBB's quote BBCode instead of the Lua module (Module:Quotation), <blockquote> and TemplateStyles the wiki does not have; the author, title and source follow the text after a dash, inside the quote; no character, multiline, style or class options; removed the source's documentation and categories.
+Example: {{Blockquote|Wikis are fun.}}
+Example: {{Blockquote|Wikis are fun.|A. Writer|My Book|1999}}
+Example: {{Blockquote|text=Short.|author=Someone}}
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>[quote]{{{text|{{{quote|{{{1|}}}}}}}}}{{#if:{{{author|{{{2|}}}}}}{{{title|{{{3|}}}}}}{{{source|{{{4|}}}}}}|&#10;— {{{author|{{{2|}}}}}}{{#if:{{{author|{{{2|}}}}}}|{{#if:{{{title|{{{3|}}}}}}|,&#32;}}}}{{{title|{{{3|}}}}}}{{#if:{{{author|{{{2|}}}}}}{{{title|{{{3|}}}}}}|{{#if:{{{source|{{{4|}}}}}}|,&#32;}}}}{{{source|{{{4|}}}}}}}}[/quote]

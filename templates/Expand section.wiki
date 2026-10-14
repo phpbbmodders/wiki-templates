@@ -1,0 +1,11 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Expand_section
+History: https://en.wikipedia.org/w/index.php?title=Template:Expand_section&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Expand_section&oldid=1333246242 (01/16/2026 4:02 PM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten in plain wiki text for the Ambox here; the link to the edit page and the "Find sources" search links are left out; no image, small, talk or category options; bold with BBCode; removed the source's documentation and categories.
+Example: {{Expand section}}
+Example: {{Expand section|examples of each setting}}
+Example: {{Expand section|with=a list of options|punctuation=no}}
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>{{Ambox|issue=This section [b]needs expansion[/b]{{#if:{{{with|}}}|&#32;with: {{{with}}}|{{#if:{{{for|}}}|&#32;with: {{{for}}}|{{#if:{{{1|}}}|&#32;with: {{{1}}} }} }} }}{{#ifeq:{{{punctuation|}}}{{{period|}}}|no||.}} You can help by adding missing information.|date={{{date|}}}}}

@@ -1,0 +1,12 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Redirect
+History: https://en.wikipedia.org/w/index.php?title=Template:Redirect&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Redirect&oldid=827943535 (02/27/2018 5:34 PM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten in plain wiki text without Lua (Module:Redirect hatnote): the redirect's name, then up to two pairs of a use and its article; an empty use reads "other uses", and a missing article gives the redirect's disambiguation page; no "and" lists, selfref or category options; shown in italics instead of the hatnote style, since the wiki allows no <div>; removed the source's documentation and categories.
+Example: {{Redirect|Docs}}
+Example: {{Redirect|Docs|the documentation team|Documentation team}}
+Example: {{Redirect|Docs||Documents}}
+Example: {{Redirect|Docs|the team|Documentation team|the files|Documents}}
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>[i]"{{{1}}}" redirects here. For {{#if:{{{2|}}}|{{{2}}}|other uses}}, see [[{{#if:{{{3|}}}|{{{3}}}|{{{1}}} (disambiguation)}}]].{{#if:{{{5|}}}|&#32;For {{#if:{{{4|}}}|{{{4}}}|other uses}}, see [[{{{5}}}]].}}[/i]

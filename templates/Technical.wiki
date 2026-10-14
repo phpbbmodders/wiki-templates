@@ -1,0 +1,14 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Technical
+History: https://en.wikipedia.org/w/index.php?title=Template:Technical&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Technical&oldid=1303524764 (07/31/2025 1:57 PM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten in plain wiki text for the Ambox here; the links to the edit page and Wikipedia's help pages are left out; no small, talk or category options; bold with BBCode; removed the source's documentation and categories.
+Example: {{Technical}}
+Expect: This article may be too technical for most readers to understand. Please help improve it to make it understandable to non-experts, without removing the technical details.
+Example: {{Technical|section}}
+Expect: This section may be too technical for most readers to understand. Please help improve it to make it understandable to non-experts, without removing the technical details.
+Example: {{Technical|introduction}}
+Expect: This article's lead section may be too technical for most readers to understand. Please help improve it to make it understandable to non-experts.
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>{{Ambox|issue={{#ifeq:{{{1|}}}|introduction|This article's lead section|This {{{1|article}}}}} [b]may be too technical for most readers to understand[/b].|fix=Please help improve it to make it understandable to non-experts{{#ifeq:{{{1|}}}|introduction|.|, without removing the technical details.}}|date={{{date|}}}}}

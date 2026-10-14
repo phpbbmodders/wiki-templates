@@ -1,0 +1,9 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Other_uses
+History: https://en.wikipedia.org/w/index.php?title=Template:Other_uses&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Other_uses&oldid=1284734559 (04/09/2025 11:36 AM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten in plain wiki text without Lua (Module:Other uses): no article gives the board's disambiguation page, one article links to it; no further options; shown in italics instead of the hatnote style, since the wiki allows no <div>; removed the source's documentation and categories.
+Example: {{Other uses|Wiki (disambiguation)}}
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>[i]For other uses, see [[{{{1|{{PAGENAME}} (disambiguation)}}}]].[/i]

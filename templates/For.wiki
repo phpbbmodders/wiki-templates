@@ -1,0 +1,11 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:For
+History: https://en.wikipedia.org/w/index.php?title=Template:For&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:For&oldid=1362897750 (07/06/2026 10:03 PM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten in plain wiki text without Lua (Module:For): one use and up to three articles, listed as A, A and B, or A, B, and C, or the board's disambiguation page when no article is given; shown in italics instead of the hatnote style, since the wiki allows no <div>; &#32; before "and", since #if trims a plain space there; removed the source's documentation and categories.
+Example: {{For|the forum software|PhpBB}}
+Example: {{For|the installer|Installation|Upgrading}}
+Example: {{For|other things|A|B|C}}
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>[i]For {{{1|other uses}}}, see {{#if:{{{2|}}}|[[{{{2}}}]]{{#if:{{{3|}}}|{{#if:{{{4|}}}|,|&#32;and}} [[{{{3}}}]]}}{{#if:{{{4|}}}|,{{#if:{{{5|}}}||&#32;and}} [[{{{4}}}]]}}{{#if:{{{5|}}}|,&#32;and [[{{{5}}}]]}}|[[{{PAGENAME}} (disambiguation)]]}}.[/i]

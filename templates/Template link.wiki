@@ -1,0 +1,9 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Template_link
+History: https://en.wikipedia.org/w/index.php?title=Template:Template_link&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Template_link&oldid=1270893692 (01/21/2025 7:19 PM UTC)
+Adapted by phpBB Modders.
+Changes: the braces are written as character entities so they show as text; no nowrap <span>, which the wiki does not allow; removed the source's documentation and categories.
+Example: {{Template link|Main}}
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>&#123;&#123;[[Template:{{{1}}}|{{{1}}}]]&#125;&#125;
