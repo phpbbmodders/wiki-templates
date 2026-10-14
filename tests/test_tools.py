@@ -9,6 +9,7 @@ Run: python3 -m unittest discover -s tests
 
 import importlib.util
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -159,7 +160,7 @@ class HostTests(unittest.TestCase):
                 self.assertEqual(self.problems_for(self.header_for(site)), [])
 
     def test_another_wiki_and_mixed_wikis_are_refused(self):
-        other = {"base": "https://example.fandom.com"}
+        other = {"base": "https://wiki.example.org"}
         self.assertEqual(self.problems_for(self.header_for(other)),
                          ["header has no source URL",
                           "header has no history URL"])
@@ -168,6 +169,59 @@ class HostTests(unittest.TestCase):
             "History: https://meta.wikimedia.org")
         self.assertEqual(self.problems_for(mixed), [
             "the source and its history are on different wikis"])
+
+
+class FandomTests(unittest.TestCase):
+    """Templates copied by hand from a Fandom wiki, with its own licence."""
+
+    HEADER = (
+        "<noinclude>\n"
+        "Source: https://templates.fandom.com/wiki/Template:Nowrap\n"
+        "History: https://templates.fandom.com/wiki/Template:Nowrap"
+        "?action=history\n"
+        "Adapted by phpBB Modders.\n"
+        "Changes: none.\n"
+        "Original licence: CC BY-SA 3.0, "
+        "https://creativecommons.org/licenses/by-sa/3.0/\n"
+        "Licence: CC BY-SA 4.0, "
+        "https://creativecommons.org/licenses/by-sa/4.0/\n</noinclude>")
+
+    def problems_for(self, header_text):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "Nowrap.wiki"
+            path.write_text(header_text + "x\n", encoding="utf-8")
+            return check_headers.problems(path)
+
+    def test_a_fandom_template_with_its_licence_passes(self):
+        self.assertEqual(self.problems_for(self.HEADER), [])
+        german = self.HEADER.replace("templates.fandom.com/wiki",
+                                     "community.fandom.com/de/wiki")
+        self.assertEqual(self.problems_for(german), [])
+
+    def test_a_fandom_template_needs_its_original_licence(self):
+        without = re.sub(r"Original licence:.*\n", "", self.HEADER)
+        nc = self.HEADER.replace(
+            "CC BY-SA 3.0, https://creativecommons.org/licenses/by-sa/3.0/",
+            "CC BY-NC-SA 3.0, "
+            "https://creativecommons.org/licenses/by-nc-sa/3.0/")
+        mismatched = self.HEADER.replace("licenses/by-sa/3.0/",
+                                         "licenses/by-sa/4.0/")
+        needed = ["a Fandom template needs an Original licence line naming "
+                  "CC BY-SA 3.0 or 4.0"]
+        for header in (without, nc, mismatched):
+            with self.subTest(header=header):
+                self.assertEqual(self.problems_for(header), needed)
+
+    def test_the_history_must_be_for_the_same_page(self):
+        other_page = self.HEADER.replace("Nowrap?action", "Small?action")
+        self.assertEqual(self.problems_for(other_page),
+                         ["the history link is for another page"])
+        other_wiki = self.HEADER.replace(
+            "History: https://templates.fandom.com",
+            "History: https://dev.fandom.com")
+        self.assertEqual(self.problems_for(other_wiki),
+                         ["the source and its history are on different "
+                          "wikis"])
 
 
 class LicenceTests(unittest.TestCase):

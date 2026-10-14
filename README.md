@@ -35,6 +35,27 @@ python3 tools/fetch_template.py --site mediawiki Note
 
 It records the exact revision copied, and removes the source's page-only part (its documentation and categories: what is outside `<onlyinclude>`, or inside `<noinclude>`), since the header takes its place. It leaves `Changes: TODO` for you to fill in, and adds a `Needs adapting:` line when the text uses something the wiki can't run: Lua (`{{#invoke:}}`), TemplateStyles, the Translate extension's `<translate>` markup, or a parser function or magic word the wiki doesn't have. It also lists the other templates each one calls. It never replaces a file that's already here unless given `--force`, and `--dry-run` only reports. Then adapt the template by hand: rewrite any Lua part in plain wiki text, and write down what you changed.
 
+### Templates from a Fandom wiki, by hand
+
+Fandom's [terms of use](https://www.fandom.com/terms-of-use) forbid "any robot, spider, scraper or other automated means" without written permission, so `fetch_template.py` never fetches from Fandom. A template there can still be copied by hand, if the wiki's licence allows it:
+
+1. Check the wiki's licence: it shows on the wiki's edit page and in its footer. Fandom wikis use CC BY-SA 3.0 unless they say otherwise. Some use a NonCommercial or NoDerivs licence; templates from those can't be used here.
+2. Copy the template's text from its edit page, without its documentation and categories.
+3. Start the file with the header, linking the Fandom page and its history, and add an **Original licence** line. CC BY-SA 3.0 lets an adaptation be shared under a later version, so the template is shared here under CC BY-SA 4.0 like the others.
+
+```text
+<noinclude>
+Source: https://templates.fandom.com/wiki/Template:Nowrap
+History: https://templates.fandom.com/wiki/Template:Nowrap?action=history
+Adapted by phpBB Modders.
+Changes: copied without its documentation and categories.
+Original licence: CC BY-SA 3.0, https://creativecommons.org/licenses/by-sa/3.0/
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>
+```
+
+Such templates aren't in `data/templates.json`, so `--check-updates` doesn't cover them.
+
 ### The record of fetched and rejected templates
 
 `data/templates.json` (created by the first fetch) records every template fetched or rejected, by its wiki and **page ID** (`enwiki:1208356`; the page ID stays the same when a page is renamed), with the revision that was looked at, its status (`fetched`, `needs adapting` or `not adaptable`) and why. Commit it with the templates, so everyone sees what was already tried.
