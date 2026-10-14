@@ -2,7 +2,7 @@
 
 Ready-made templates for the [phpBB Modders wiki extension](https://github.com/phpbbmodders/phpbb-ext-wiki), adapted from Wikipedia's and other Wikimedia wikis' for what the wiki can do, so a board can start with a useful set instead of writing every template from nothing.
 
-So far [`templates/`](templates/) holds the hatnotes `{{Main}}`, `{{See also}}`, `{{Further}}` and `{{About}}`; the message boxes `{{Ambox}}`, `{{Update}}`, `{{Unreferenced}}`, `{{More citations needed}}` and `{{Under construction}}`; the stub boxes `{{Asbox}}` and `{{Stub}}`; and the inline helpers `{{Nowrap}}`, `{{Small}}` and `{{Large}}`. The plan for this repository is in the wiki extension's [`docs/TODO/todo-wiki-templates-repo.md`](https://github.com/phpbbmodders/phpbb-ext-wiki/blob/main/docs/TODO/todo-wiki-templates-repo.md).
+So far [`templates/`](templates/) holds the hatnotes `{{Main}}`, `{{See also}}`, `{{Further}}`, `{{About}}`, `{{Distinguish}}`, `{{For}}`, `{{Other uses}}` and `{{Redirect}}`; the message boxes `{{Ambox}}`, `{{Update}}`, `{{Unreferenced}}`, `{{More citations needed}}`, `{{Primary sources}}`, `{{Cleanup}}`, `{{Confusing}}`, `{{Technical}}`, `{{Expand section}}` and `{{Under construction}}`; the stub boxes `{{Asbox}}` and `{{Stub}}`; the inline helpers `{{Nowrap}}`, `{{Small}}` and `{{Large}}`; and `{{Blockquote}}` (phpBB's quote box) and `{{Template link}}`, which shows a template's name in braces as a link. The plan for this repository is in the wiki extension's [`docs/TODO/todo-wiki-templates-repo.md`](https://github.com/phpbbmodders/phpbb-ext-wiki/blob/main/docs/TODO/todo-wiki-templates-repo.md).
 
 ## Why a separate repository
 

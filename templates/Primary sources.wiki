@@ -1,0 +1,12 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Primary_sources
+History: https://en.wikipedia.org/w/index.php?title=Template:Primary_sources&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Primary_sources&oldid=1324617792 (11/28/2025 6:10 PM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten in plain wiki text for the Ambox here; left out the biography (BLP) wording and the "Find sources" search links, which are for Wikipedia, and the links to Wikipedia's help pages; no image, small, talk or category options; bold with BBCode; removed the source's documentation and categories.
+Example: {{Primary sources}}
+Expect: This article relies excessively on references to primary sources. Please improve this article by adding secondary or tertiary sources.
+Example: {{Primary sources|section}}
+Expect: This section relies excessively on references to primary sources. Please improve this section by adding secondary or tertiary sources.
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>{{Ambox|issue=This {{{1|article}}} [b]relies excessively on references to primary sources[/b].|fix=Please improve this {{{1|article}}} by adding secondary or tertiary sources.|date={{{date|}}}}}

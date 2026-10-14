@@ -1,0 +1,14 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Cleanup
+History: https://en.wikipedia.org/w/index.php?title=Template:Cleanup&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Cleanup&oldid=1367072181 (07/31/2026 8:17 PM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten in plain wiki text for the Ambox here; "Wikipedia's quality standards" reads "the wiki's quality standards", and the links to Wikipedia's help pages are left out; a missing reason says so in the box instead of showing an error; a full stop is added to a reason without one, as Terminate sentence does; no small, talk or category options; bold with BBCode; removed the source's documentation and categories.
+Example: {{Cleanup|reason=the article mixes two topics}}
+Expect: This article may require cleanup to meet the wiki's quality standards. The specific problem is: the article mixes two topics. Please help improve this article if you can.
+Example: {{Cleanup|section|reason=Unclear wording!}}
+Expect: This section may require cleanup to meet the wiki's quality standards. The specific problem is: Unclear wording! Please help improve this section if you can.
+Example: {{Cleanup}}
+Expect: This article may require cleanup to meet the wiki's quality standards. No cleanup reason has been specified. Please help improve this article if you can.
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>{{Ambox|issue=This {{{1|article}}} may [b]require cleanup[/b] to meet the wiki's quality standards.{{#if:{{{reason|}}}|&#32;The specific problem is: [b]{{{reason}}}{{#switch:{{#sub:{{{reason}}}|-1}}|.|!|?=|#default=.}}[/b]}}|fix={{#if:{{{reason|}}}||No cleanup reason has been specified.&#32;}}Please help improve this {{{1|article}}} if you can.|date={{{date|}}}}}

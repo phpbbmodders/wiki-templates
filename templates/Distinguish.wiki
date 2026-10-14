@@ -1,0 +1,12 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Distinguish
+History: https://en.wikipedia.org/w/index.php?title=Template:Distinguish&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Distinguish&oldid=1137476713 (02/04/2023 9:16 PM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten in plain wiki text without Lua (Module:Distinguish): up to four articles, listed as A, A or B, or A, B, or C; the text option replaces the list; no selfref option; shown in italics instead of the hatnote style, since the wiki allows no <div>; &#32; before "or", since #if trims a plain space there; removed the source's documentation and categories.
+Example: {{Distinguish|Main Page}}
+Example: {{Distinguish|Installation|Upgrading}}
+Example: {{Distinguish|A|B|C}}
+Example: {{Distinguish|text=the forum's own search}}
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>[i]Not to be confused with {{#if:{{{text|}}}|{{{text}}}|[[{{{1}}}]]{{#if:{{{2|}}}|{{#if:{{{3|}}}|,|&#32;or}} [[{{{2}}}]]}}{{#if:{{{3|}}}|,{{#if:{{{4|}}}||&#32;or}} [[{{{3}}}]]}}{{#if:{{{4|}}}|,&#32;or [[{{{4}}}]]}}}}.[/i]

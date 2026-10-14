@@ -1,0 +1,12 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Confusing
+History: https://en.wikipedia.org/w/index.php?title=Template:Confusing&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Confusing&oldid=1264164820 (12/20/2024 9:32 PM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten in plain wiki text for the Ambox here; left out the sentence about a discussion on the talk page, which the wiki does not have, and the links to Wikipedia's help pages; no small, talk or category options; bold with BBCode; removed the source's documentation and categories.
+Example: {{Confusing}}
+Expect: This article may be confusing or unclear to readers. Please help clarify the article.
+Example: {{Confusing|section|reason=the steps are out of order}}
+Expect: This section may be confusing or unclear to readers. In particular, the steps are out of order. Please help clarify the section.
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>{{Ambox|issue=This {{{1|article}}} [b]may be confusing or unclear to readers[/b].{{#if:{{{reason|}}}|&#32;In particular, {{{reason}}}.}}|fix=Please help clarify the {{{1|article}}}.|date={{{date|}}}}}
