@@ -1,0 +1,11 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Center
+History: https://en.wikipedia.org/w/index.php?title=Template:Center&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Center&oldid=1282577637 (03/27/2025 8:18 AM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten with the wiki's center tag, which shows as a centred block, instead of a div with the "center" class; no style option, since the wiki lets no style attribute through; no check for unknown parameters (Lua) or tracking categories; removed the source's documentation and categories.
+Example: {{Center|This text is centred.}}
+Example: {{Center|[b]A centred heading line[/b]}}
+Expect: A centred heading line
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude><center>{{{1|}}}</center>
