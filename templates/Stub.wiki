@@ -1,0 +1,10 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Stub
+History: https://en.wikipedia.org/w/index.php?title=Template:Stub&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Stub&oldid=885141861 (02/26/2019 6:07 AM UTC)
+Adapted by phpBB Modders.
+Changes: kept as a call to the Asbox here, without its image, category and sort options; removed the source's documentation and categories.
+Example: {{Stub}}
+Expect: This article is a stub. You can help {{SITENAME}} by adding missing information.
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>{{Asbox|name=Template:Stub}}

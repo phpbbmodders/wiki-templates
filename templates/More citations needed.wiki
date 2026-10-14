@@ -1,0 +1,12 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:More_citations_needed
+History: https://en.wikipedia.org/w/index.php?title=Template:More_citations_needed&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:More_citations_needed&oldid=1369941821 (08/18/2026 3:50 AM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten in plain wiki text for the Ambox here; left out the "Find sources" search links and the "Learn how and when to remove this message" link, which are for Wikipedia; links to Wikipedia's help pages left out; no find, small or category options; bold with BBCode; removed the source's documentation and categories.
+Example: {{More citations needed}}
+Expect: This article needs more citations. Please help improve this article by adding citations to reliable sources. Unsourced material may be challenged and removed.
+Example: {{More citations needed|section}}
+Expect: This section needs more citations. Please help improve this section by adding citations to reliable sources. Unsourced material may be challenged and removed.
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>{{Ambox|issue=This {{{1|article}}} [b]needs more citations[/b].|fix=Please help improve this {{{1|article}}} by adding citations to reliable sources. Unsourced material may be challenged and removed.|date={{{date|}}}}}

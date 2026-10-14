@@ -1,10 +1,24 @@
 {
+  "enwiki:726079": {
+    "name": "Stub",
+    "reason": "",
+    "revid": 885141861,
+    "status": "adapted",
+    "title": "Template:Stub"
+  },
   "enwiki:1208356": {
     "name": "Main",
     "reason": "",
     "revid": 1363280785,
     "status": "adapted",
     "title": "Template:Main"
+  },
+  "enwiki:1440745": {
+    "name": "Unreferenced",
+    "reason": "",
+    "revid": 1330232496,
+    "status": "adapted",
+    "title": "Template:Unreferenced"
   },
   "enwiki:1721254": {
     "name": "See also",
@@ -20,11 +34,46 @@
     "status": "adapted",
     "title": "Template:Further"
   },
+  "enwiki:1721338": {
+    "name": "Update",
+    "reason": "",
+    "revid": 1334395511,
+    "status": "adapted",
+    "title": "Template:Update"
+  },
+  "enwiki:2425121": {
+    "name": "Under construction",
+    "reason": "",
+    "revid": 1379314703,
+    "status": "adapted",
+    "title": "Template:Under construction"
+  },
   "enwiki:2468023": {
     "name": "About",
     "reason": "",
     "revid": 1044582448,
     "status": "adapted",
     "title": "Template:About"
+  },
+  "enwiki:10160967": {
+    "name": "More citations needed",
+    "reason": "",
+    "revid": 1369941821,
+    "status": "adapted",
+    "title": "Template:More citations needed"
+  },
+  "enwiki:13179742": {
+    "name": "Ambox",
+    "reason": "",
+    "revid": 1377691028,
+    "status": "adapted",
+    "title": "Template:Ambox"
+  },
+  "enwiki:13431031": {
+    "name": "Asbox",
+    "reason": "",
+    "revid": 1271057113,
+    "status": "adapted",
+    "title": "Template:Article stub box"
   }
 }

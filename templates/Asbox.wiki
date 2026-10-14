@@ -1,0 +1,12 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Article_stub_box
+History: https://en.wikipedia.org/w/index.php?title=Template:Article_stub_box&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Article_stub_box&oldid=1271057113 (01/22/2025 12:12 PM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten in plain wiki text without Lua (Module:Article stub box): a one-cell table; "You can help Wikipedia" names the board instead ({{SITENAME}}); no image, no link to the edit page, no v t e links, no category options; removed the source's documentation and categories.
+Example: {{Asbox|subject=software|name=Template:Software-stub}}
+Expect: This software article is a stub. You can help {{SITENAME}} by adding missing information.
+Example: {{Asbox|name=Template:X-stub}}
+Expect: This article is a stub. You can help {{SITENAME}} by adding missing information.
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude><table><tr><td>This {{#if:{{{subject|}}}|{{{subject}}}&nbsp;}}{{{article|article}}}{{#if:{{{qualifier|}}}|&nbsp;{{{qualifier}}}}} is a stub. You can help {{SITENAME}} by adding missing information.</td></tr></table>
