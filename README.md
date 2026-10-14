@@ -14,128 +14,35 @@ Only templates that work as plain wiki text with parameters:
 
 - hatnotes (`{{Main}}`, `{{See also}}`, `{{Further}}`, `{{About}}`);
 - message boxes ("needs references", "out of date", "under construction", stub);
-- small inline helpers (`{{nowrap}}`, `{{small}}`, `{{center}}`);
+- small inline helpers (`{{Nowrap}}`, `{{Small}}`, `{{Large}}`; `{{Center}}` needs a `<div>`, so it's recorded as not adaptable);
 - simplified infobox, citation and navbox templates that take the same parameter names as Wikipedia's.
 
 Left out: Lua modules (`{{#invoke:}}`) and the templates that need them, TemplateStyles (CSS inside a template), and anything whose source page says it is not plain CC BY-SA.
 
 ## Adding a template
 
-Start with [`tools/fetch_template.py`](tools/fetch_template.py), which fetches a template's current text through the MediaWiki API and writes it with the header below filled in:
+Each template is one file in [`templates/`](templates/), named after the original (`Main.wiki`, `See also.wiki`). It starts with a header inside `<noinclude>` that links the page it was copied from and that page's history, says what was changed, and states the licence, as Wikipedia asks of a reuser; the [Check](.github/workflows/check.yml) workflow refuses a template without it.
 
-```bash
-python3 tools/fetch_template.py Nowrap "See also"
-```
+1. **Fetch** the original, with its header filled in ([Fetching templates](https://github.com/phpbbmodders/wiki-templates/wiki/Fetching-templates)):
 
-It fetches from English Wikipedia unless `--site` names another Wikimedia wiki: `mediawiki` (MediaWiki.org), `meta` (Meta-Wiki) or `commons` (Wikimedia Commons), all CC BY-SA 4.0. Before fetching it reads the wiki's licence from its API, and it stops if that isn't CC BY-SA.
+   ```bash
+   python3 tools/fetch_template.py "See also"
+   ```
 
-```bash
-python3 tools/fetch_template.py --site mediawiki Note
-```
+2. **Adapt** it by hand: rewrite what the wiki can't run in plain wiki text, and say what you changed in its header ([The header](https://github.com/phpbbmodders/wiki-templates/wiki/The-header)).
+3. **Compare** its examples with the original on a test board ([Checking a template](https://github.com/phpbbmodders/wiki-templates/wiki/Checking-a-template)):
 
-It records the exact revision copied, and removes the source's page-only part (its documentation and categories: what is outside `<onlyinclude>`, or inside `<noinclude>`), since the header takes its place. It leaves `Changes: TODO` for you to fill in, and adds a `Needs adapting:` line when the text uses something the wiki can't run: Lua (`{{#invoke:}}`), TemplateStyles, the Translate extension's `<translate>` markup, or a parser function or magic word the wiki doesn't have. It also lists the other templates each one calls. It never replaces a file that's already here unless given `--force`, and `--dry-run` only reports. Then adapt the template by hand: rewrite any Lua part in plain wiki text, and write down what you changed.
+   ```bash
+   python3 tools/compare_template.py --board ~/boards/wiki "See also"
+   ```
 
-### Checking a template against the original
+4. **Record** it as adapted in `data/templates.json` ([The record](https://github.com/phpbbmodders/wiki-templates/wiki/The-record)):
 
-Give each template one or more `Example:` lines in its header, one call each. They also show as documentation on the template's own page on a board:
+   ```bash
+   python3 tools/fetch_template.py --mark-adapted "See also"
+   ```
 
-```text
-Example: {{Main|History of phpBB}}
-Example: {{Main|Installation|Upgrading}}
-```
-
-[`tools/compare_template.py`](tools/compare_template.py) renders each example twice and compares the text a reader sees:
-
-- **on the wiki it came from,** with the original template, through that wiki's API (`action=parse`). That is the template's current version there, which may be newer than the one copied.
-- **on a phpBB test board** with the phpBB Modders wiki extension, using this repository's templates, through [`tools/render_on_board.php`](tools/render_on_board.php). It loads the board with [seed-forum](https://github.com/phpbbmodders/seed-forum)'s `bin/seed-bootstrap.php`, puts every template in this repository on the board inside a database transaction, and rolls it back afterwards, so the board is left as it was.
-
-```bash
-python3 tools/compare_template.py --board ~/boards/wiki Main Nowrap
-```
-
-Each example prints `MATCH`, or `DIFFER` with both texts and the words that differ.
-
-When an adaptation deliberately differs from the original, for example leaving out links that only make sense on Wikipedia, add an `Expect:` line right under the example. It holds wiki text the example should render the same as, and it's rendered on the board too, so magic words such as `{{SITENAME}}` work:
-
-```text
-Example: {{Stub}}
-Expect: This article is a stub. You can help {{SITENAME}} by adding missing information.
-```
-
-That example is compared with its `Expect:` text instead of the original, and prints `EXPECTED` when they match. The original's text is still printed, so a reviewer can see what was left out. Templates copied from Fandom are rendered on the board only (`BOARD ONLY`), since Fandom's terms forbid automated access. `--board` defaults to `$WIKI_TEMPLATES_BOARD`, and `--bootstrap` to `$SEED_FORUM_BOOTSTRAP`, or to a seed-forum checkout next to this repository.
-
-Two things it catches often:
-
-- **Inline HTML.** The wiki only allows HTML tables in articles and templates, so a `<span>`, `<div>` or `<b>` from the original is shown as text.
-- **Spaces lost at the edges of `{{#if:}}` and similar.** Their results are trimmed, on the wiki as on Wikipedia, so a plain space there is dropped. Write `&#32;` to keep it, as Wikipedia's templates do.
-
-### Templates from a Fandom wiki, by hand
-
-Fandom's [terms of use](https://www.fandom.com/terms-of-use) forbid "any robot, spider, scraper or other automated means" without written permission, so `fetch_template.py` never fetches from Fandom. A template there can still be copied by hand, if the wiki's licence allows it:
-
-1. Check the wiki's licence: it shows on the wiki's edit page and in its footer. Fandom wikis use CC BY-SA 3.0 unless they say otherwise. Some use a NonCommercial or NoDerivs licence; templates from those can't be used here.
-2. Copy the template's text from its edit page, without its documentation and categories.
-3. Start the file with the header, linking the Fandom page and its history, and add an **Original licence** line. CC BY-SA 3.0 lets an adaptation be shared under a later version, so the template is shared here under CC BY-SA 4.0 like the others.
-
-```text
-<noinclude>
-Source: https://templates.fandom.com/wiki/Template:Nowrap
-History: https://templates.fandom.com/wiki/Template:Nowrap?action=history
-Adapted by phpBB Modders.
-Changes: copied without its documentation and categories.
-Original licence: CC BY-SA 3.0, https://creativecommons.org/licenses/by-sa/3.0/
-Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
-</noinclude>
-```
-
-Such templates aren't in `data/templates.json`, so `--check-updates` doesn't cover them.
-
-### The record of fetched and rejected templates
-
-`data/templates.json` records every template fetched or rejected, by its wiki and **page ID** (`enwiki:1208356`; the page ID stays the same when a page is renamed), with the revision that was looked at, its status (`fetched`, `needs adapting`, `adapted` or `not adaptable`) and why. Commit it with the templates, so everyone sees what was already tried.
-
-- A template recorded at its latest revision is not downloaded again: only its page info is read, which is cheap. `--force` fetches it anyway.
-- Once a template is adapted and passes the header check, record it as such. It stays at the revision that was fetched, so `--check-updates` still reports later edits to the original:
-
-  ```bash
-  python3 tools/fetch_template.py --mark-adapted Main
-  ```
-
-- A template that can't reasonably be adapted, for example one built on a large Lua module, is recorded without writing a file:
-
-  ```bash
-  python3 tools/fetch_template.py --mark-unadaptable Ambox --reason "Lua: Module:Message box is too large to rewrite"
-  ```
-
-- `--check-updates` reports every recorded template, from every wiki, that was edited, renamed or deleted since it was recorded. That covers rejected ones that might be adaptable now and adapted ones that might have fixes worth taking. It changes nothing; fetching or marking a template again records its new revision.
-
-  ```bash
-  python3 tools/fetch_template.py --check-updates
-  ```
-
-One file per template in [`templates/`](templates/), named after the source template (`Main.wiki`, `See also.wiki`, ...), so text pasted from the source wiki finds the same names and parameters. Every file starts with this header:
-
-```text
-<noinclude>
-Source: https://en.wikipedia.org/wiki/Template:Main
-History: https://en.wikipedia.org/w/index.php?title=Template:Main&action=history
-Adapted by phpBB Modders.
-Changes: rewritten without Lua; the "selfref" option removed.
-Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
-</noinclude>
-```
-
-The header meets what Wikipedia asks of a reuser: it links the page copied and its history (which lists the authors), says the copy was changed, and states the licence. It sits inside `<noinclude>`, so it shows on the template's own page on the board but not in the articles that use it.
-
-Since the header is the documentation on the template's page, a template call written in it is run there. Only `Example:` and `Expect:` lines may hold `{{` or `}}`; write a function's name without braces anywhere else, such as "#if".
-
-The [Check](.github/workflows/check.yml) workflow runs [`tools/check_headers.py`](tools/check_headers.py) on every push and pull request. It fails when a template is missing any of these lines, still says `Changes: TODO`, or still has a `Needs adapting:` line:
-
-```bash
-python3 tools/check_headers.py
-```
-
-This is not legal advice. Wikipedia's [Reusing Wikipedia content](https://en.wikipedia.org/wiki/Wikipedia:Reusing_Wikipedia_content) page and the Wikimedia [Terms of Use](https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use) say each reuser must work out how the licences apply to them.
+Templates from Fandom wikis are copied by hand instead: [Templates from Fandom](https://github.com/phpbbmodders/wiki-templates/wiki/Templates-from-Fandom). The [wiki](https://github.com/phpbbmodders/wiki-templates/wiki) covers each step in full.
 
 ## Installing on a board
 
