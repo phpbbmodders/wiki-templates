@@ -151,6 +151,21 @@ class HeaderTests(unittest.TestCase):
                 ["a header line other than Example and Expect holds {{ or "
                  "}}, which the board would run: Changes"])
 
+    def test_own_work_needs_only_its_source_line_and_licence(self):
+        own = ("<noinclude>\nSource: phpBB Modders (own work)\n"
+               "Licence: CC BY-SA 4.0, " + check_headers.LICENCE_URL + "\n"
+               "</noinclude>== Overview ==")
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.write(directory, own)
+            self.assertEqual(check_headers.problems(path), [])
+            no_licence = own.replace(check_headers.LICENCE_URL, "")
+            path = self.write(directory, no_licence)
+            self.assertEqual(check_headers.problems(path),
+                             ["header has no licence notice"])
+            other = own.replace("phpBB Modders (own work)", "somebody")
+            self.assertIn("header has no source URL",
+                          check_headers.problems(self.write(directory, other)))
+
     def test_adapted_header_passes(self):
         header = fetch_template.header(ENWIKI, PAGE, [], True).replace(
             "Changes: TODO.", "Changes: rewritten without Lua.")
