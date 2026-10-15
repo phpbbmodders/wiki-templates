@@ -1,0 +1,15 @@
+<noinclude>
+Source: https://en.wikipedia.org/wiki/Template:Cite_web
+History: https://en.wikipedia.org/w/index.php?title=Template:Cite_web&action=history
+Revision: https://en.wikipedia.org/w/index.php?title=Template:Cite_web&oldid=753103437 (12/05/2016 5:36 AM UTC)
+Adapted by phpBB Modders.
+Changes: rewritten in plain wiki text without Lua (Module:Citation/CS1) for the common parameters, in Wikipedia's order and wording: author (or last and first), date, title linked to url (to archive-url when there is one), website or work in italics, publisher, archive-url with archive-date, access-date, and quote, in quotation marks instead of a <q> element; links with phpBB's url BBCode; no other names, editors, language, via, page, id, format or url-status options, no checking of dates or URLs and no error messages; removed the source's documentation and categories.
+Example: {{Cite web|url=https://www.phpbb.com/|title=phpBB Forum Software|access-date=2026-10-14}}
+Example: {{Cite web|url=https://example.com/a|title=Article|last=Smith|first=Jane|date=2025-03-04|website=Example News|publisher=Example Media|access-date=2026-10-14}}
+Example: {{Cite web|url=https://example.com/b|title=Page|author=John Doe|date=March 2024|website=Example|archive-url=https://web.archive.org/web/20240501000000/https://example.com/b|archive-date=2024-05-01|access-date=2026-10-14|quote=Some words.}}
+Expect: John Doe (March 2024). "Page". Example. Archived from the original on 2024-05-01. Retrieved 2026-10-14. "Some words."
+Example: {{Cite web|url=https://example.com/c|title=Release notes|publisher=phpBB Limited|date=1 May 2025}}
+Example: {{Cite web|url=https://example.com/d|title=Docs|last=Smith|first=Jane|work=Docs site}}
+Example: {{Cite web|url=https://example.com/e|title=Ends with a question?|website=Q&A}}
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>{{#if:{{{last|}}}|{{{last}}}{{#if:{{{first|}}}|,&#32;{{{first}}}}}|{{{author|}}}}}{{#if:{{{last|}}}{{{author|}}}|{{#if:{{{date|}}}|&#32;({{{date}}})}}.&#32;}}"{{#if:{{{archive-url|}}}|[url={{{archive-url}}}]{{{title}}}[/url]|{{#if:{{{url|}}}|[url={{{url}}}]{{{title}}}[/url]|{{{title}}} }} }}".{{#if:{{{website|}}}|&#32;[i]{{{website}}}[/i].|{{#if:{{{work|}}}|&#32;[i]{{{work}}}[/i]. }} }}{{#if:{{{publisher|}}}|&#32;{{{publisher}}}.}}{{#if:{{{last|}}}{{{author|}}}||{{#if:{{{date|}}}|&#32;{{{date}}}. }} }}{{#if:{{{archive-url|}}}|&#32;Archived from [url={{{url}}}]the original[/url]{{#if:{{{archive-date|}}}|&#32;on {{{archive-date}}} }}.}}{{#if:{{{access-date|}}}|&#32;Retrieved {{{access-date}}}.}}{{#if:{{{quote|}}}|&#32;"{{{quote}}}"}}
