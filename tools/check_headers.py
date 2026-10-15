@@ -17,10 +17,15 @@ Each templates/*.wiki file must start with a <noinclude> block holding:
 * the licence notice, a link to
   https://creativecommons.org/licenses/by-sa/4.0/;
 
-and no "Needs adapting:" line, which tools/fetch_template.py writes while a
-template still uses what the wiki cannot run. Only "Example:" and "Expect:"
-lines may hold {{ or }}: the header is the template page's documentation on
-a board, so a call anywhere else in it would be run there.
+A template written here rather than adapted, such as a Start template for new
+articles, says "Source: phpBB Modders (own work)" instead of the Source and
+History lines, and needs no list of changes; it carries the same licence
+notice, so the repository stays under one licence.
+
+There must be no "Needs adapting:" line, which tools/fetch_template.py
+writes while a template still uses what the wiki cannot run. Only "Example:"
+and "Expect:" lines may hold {{ or }}: the header is the template page's
+documentation on a board, so a call anywhere else in it would be run there.
 
 Input: the templates directory (default: templates/ next to this script's
 parent). Output: one line per problem on stderr. Exit status: 0 when every
@@ -63,6 +68,8 @@ REQUIRED = {
     "licence notice": re.compile(re.escape(LICENCE_URL)),
 }
 HEADER = re.compile(r"\A<noinclude>(.*?)</noinclude>", re.S)
+# A template written here, not adapted from another wiki
+OWN_WORK = re.compile(r"^Source: phpBB Modders \(own work\)$", re.M)
 
 
 def source_problems(text: str) -> list:
@@ -99,9 +106,11 @@ def problems(path: Path) -> list:
     header = HEADER.match(text)
     if not header:
         return ["does not start with a <noinclude> header"]
-    found = source_problems(header.group(1))
+    own_work = bool(OWN_WORK.search(header.group(1)))
+    found = [] if own_work else source_problems(header.group(1))
     found += [f"header has no {name}" for name, pattern in REQUIRED.items()
-              if not pattern.search(header.group(1))]
+              if not pattern.search(header.group(1))
+              and not (own_work and name == "list of changes")]
     if re.search(r"^Changes: TODO\b", header.group(1), re.M):
         found.append("the list of changes still says TODO")
     # The header is the template page's documentation on a board, so a call

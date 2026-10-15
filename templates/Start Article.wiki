@@ -1,0 +1,19 @@
+<noinclude>
+Source: phpBB Modders (own work)
+A starting point for an encyclopedia-style article. When someone creates a new article, the Start from choice above the edit form offers it as "Article" and fills the text box with everything below this box, to replace with the real text. It is not meant to be included in an article.
+Licence: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+</noinclude>[b]Subject[/b] is (one sentence saying what it is).
+
+== Overview ==
+(What it is, what it does, and who it is for.)
+
+== History ==
+(How it began and how it has changed.)
+
+== See also ==
+[list]
+[*][[Related article]]
+[/list]
+
+== References ==
+(Where the facts above come from, one source per line.)

@@ -54,6 +54,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import fetch_template  # noqa: E402
+import check_headers  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
 RENDERER = Path(__file__).resolve().parent / "render_on_board.php"
@@ -224,6 +225,10 @@ def main() -> int:
     failed = 0
     plan = []
     for name in names:
+        # Written here, so there is no source wiki to compare with
+        if check_headers.OWN_WORK.search(templates[name]):
+            print(f"SKIPPED  {name}: own work, no source wiki to compare with")
+            continue
         examples = EXAMPLE.findall(templates[name])
         try:
             site = site_of(templates[name])
