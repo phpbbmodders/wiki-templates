@@ -46,7 +46,9 @@ Templates from Fandom wikis are copied by hand instead: [Templates from Fandom](
 
 ## Installing on a board
 
-Planned in the wiki extension, not built yet. The admin uploads this repository's zip in the ACP, or copies the files into a folder in the board's `store/`, then an **Install starter templates** button creates one `Template:` page per file. An existing template page is not overwritten without asking.
+In the wiki extension (1.1.0-a2 and later), **ACP → Extensions → Wiki → Starter templates**. The admin uploads this repository's zip, presses **Download latest**, or copies the files from `templates/` by FTP into the board's `store/phpbbmodders_wiki/templates/`, then ticks which templates to install. Each becomes a new version of its `Template:` page. A page edited on the board since it was installed is not ticked, so the board's changes are only replaced if the admin chooses to. A file without its source and licence header, or still marked as not adapted, cannot be installed.
+
+The page can also check this repository every few days, as often as the admin chooses, and tell the board's admins when templates are new or have changed. It never downloads or installs on its own.
 
 ## Contributing
 
