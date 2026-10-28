@@ -1,4 +1,7 @@
+# Shared line endings and binary files
 * text=auto eol=lf
+*.jpeg binary
+
 *.wiki text eol=lf
 *.py text eol=lf
 *.png binary
